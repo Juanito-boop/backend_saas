@@ -27,6 +27,18 @@
       "value": "member-secret12345"
     },
     {
+      "key": "ownerVerificationToken",
+      "value": ""
+    },
+    {
+      "key": "memberVerificationToken",
+      "value": ""
+    },
+    {
+      "key": "verificationCallbackUrl",
+      "value": "http://localhost:3000/api/health/live"
+    },
+    {
       "key": "teamId",
       "value": ""
     },
@@ -73,7 +85,7 @@
                 "email"
               ]
             },
-            "description": "Crea el usuario propietario en Better Auth y deja la cookie de sesion en Postman."
+            "description": "Crea el usuario propietario en Better Auth. Si SMTP esta configurado con Mailtrap, el correo de verificacion llegara al inbox; si no, el link se imprime en la consola del API."
           }
         },
         {
@@ -102,7 +114,7 @@
                 "email"
               ]
             },
-            "description": "Inicia sesion del owner. Postman deberia guardar automaticamente la cookie."
+            "description": "Inicia sesion del owner. Si el correo no esta verificado, Better Auth devolvera un error y reenviara el email si esta habilitado."
           }
         },
         {
@@ -131,7 +143,7 @@
                 "email"
               ]
             },
-            "description": "Crea el usuario miembro por Better Auth para que exista en users y tenga credenciales de login."
+            "description": "Crea el usuario miembro por Better Auth. Ese usuario no podra usar teams, subscriptions ni scrape-jobs hasta verificar su correo."
           }
         },
         {
@@ -160,7 +172,7 @@
                 "email"
               ]
             },
-            "description": "Inicia sesion del miembro. Si ya habia una cookie del owner, esta request la reemplaza por la del miembro."
+            "description": "Inicia sesion del miembro. Si no esta verificado, Better Auth bloqueara la sesion. Si ya habia una cookie del owner, esta request la reemplaza por la del miembro."
           }
         },
         {
@@ -179,6 +191,90 @@
               ]
             },
             "description": "Verifica que la cookie de sesion este activa antes de probar Teams y Subscriptions."
+          }
+        },
+        {
+          "name": "Send Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{ownerEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/send-verification-email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "send-verification-email"
+              ]
+            },
+            "description": "Reenvia el correo de verificacion si el usuario aun no ha verificado su email."
+          }
+        },
+        {
+          "name": "Verify Owner Email",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify-email?token={{ownerVerificationToken}}&callbackURL={{verificationCallbackUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "verify-email"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{ownerVerificationToken}}"
+                },
+                {
+                  "key": "callbackURL",
+                  "value": "{{verificationCallbackUrl}}"
+                }
+              ]
+            },
+            "description": "Pega aqui el token que llega por Mailtrap o por la consola del API para verificar al owner."
+          }
+        },
+        {
+          "name": "Verify Member Email",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify-email?token={{memberVerificationToken}}&callbackURL={{verificationCallbackUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "verify-email"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{memberVerificationToken}}"
+                },
+                {
+                  "key": "callbackURL",
+                  "value": "{{verificationCallbackUrl}}"
+                }
+              ]
+            },
+            "description": "Pega aqui el token que llega por Mailtrap o por la consola del API para verificar al member."
           }
         }
       ]
@@ -265,7 +361,7 @@
                 "teams"
               ]
             },
-            "description": "Crea un equipo y guarda el teamId para el resto de requests. Requiere sesion activa."
+            "description": "Crea un equipo y guarda el teamId para el resto de requests. Requiere sesion activa y correo verificado."
           }
         },
         {
@@ -324,7 +420,7 @@
                 "members"
               ]
             },
-            "description": "Invita un usuario existente al equipo usando su email."
+            "description": "Invita un usuario existente al equipo usando su email. El usuario invitado seguira bloqueado hasta verificar su correo."
           }
         },
         {
@@ -455,7 +551,7 @@
                 "subscription"
               ]
             },
-            "description": "Solo el owner puede crear la suscripcion del equipo."
+            "description": "Solo el owner puede crear la suscripcion del equipo y debe tener el correo verificado."
           }
         },
         {
@@ -532,7 +628,8 @@
                 "api",
                 "scrape-jobs"
               ]
-            }
+            },
+            "description": "Encola un trabajo de scraping. Requiere sesion activa y correo verificado."
           }
         }
       ]

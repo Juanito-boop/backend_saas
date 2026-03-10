@@ -1,6 +1,7 @@
 import { BadRequestException, Body, Controller, Get, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
 
+import { Public } from './lib/public';
 import { SystemService } from './system.service';
 
 type ScheduleScrapeBody = {
@@ -12,11 +13,13 @@ type ScheduleScrapeBody = {
 export class SystemController {
   constructor(private readonly systemService: SystemService) { }
 
+  @Public()
   @Get('health/live')
   getLiveness() {
     return this.systemService.getLiveness();
   }
 
+  @Public()
   @Get('health/ready')
   async getReadiness(@Res({ passthrough: true }) response: Response) {
     const report = await this.systemService.getReadiness();
@@ -26,6 +29,7 @@ export class SystemController {
     return report;
   }
 
+  @Public()
   @Get('health')
   async getHealth(@Res({ passthrough: true }) response: Response) {
     const report = await this.systemService.getReadiness();

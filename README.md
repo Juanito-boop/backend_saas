@@ -40,10 +40,43 @@ PORT=3000
 BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=replace-with-a-random-32-character-secret
 BETTER_AUTH_DISABLE_ORIGIN_CHECK=false
-BETTER_AUTH_DISABLE_ORIGIN_CHECK_PATHS=/sign-up/email,/sign-in/email,/request-password-reset,/reset-password,/change-password
+BETTER_AUTH_DISABLE_ORIGIN_CHECK_PATHS=/sign-up/email,/sign-in/email,/send-verification-email,/request-password-reset,/reset-password,/change-password
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+SMTP_FROM="SaaS Backend <no-reply@example.com>"
 ```
 
 `BETTER_AUTH_DISABLE_ORIGIN_CHECK_PATHS` allows non-browser clients such as Postman or server-to-server callers that do not send an `Origin` header to use the listed auth endpoints. Set `BETTER_AUTH_DISABLE_ORIGIN_CHECK=true` only if you intentionally want to skip the origin check for every Better Auth route.
+
+If SMTP is not configured, verification emails are not sent externally and the verification link is logged to the API console for local development.
+
+Mailtrap example:
+
+```bash
+SMTP_HOST=sandbox.smtp.mailtrap.io
+SMTP_PORT=2525
+SMTP_SECURE=false
+SMTP_USER=your-mailtrap-username
+SMTP_PASS=your-mailtrap-password
+SMTP_FROM="SaaS Backend <no-reply@example.test>"
+```
+
+## Email verification
+
+Email and password sign-in now requires a verified email address.
+
+Nest routes are protected by default. Only the health endpoints are marked public. Better Auth routes remain public because they are mounted directly under `/api/auth` in the Express server.
+
+- `POST /api/auth/sign-up/email` creates the user and triggers a verification email.
+- `POST /api/auth/send-verification-email` re-sends the verification email for an existing user.
+- `GET /api/auth/verify-email?token=...` verifies the email and marks `users.email_verified = true`.
+- `api/teams/*` and `api/teams/:teamId/subscription` require both an authenticated session and `emailVerified = true`.
+- `POST /api/scrape-jobs` also requires both an authenticated session and `emailVerified = true`.
+
+This means invited members cannot access team or subscription endpoints until they verify their email address.
 
 ## Health endpoints
 
@@ -56,13 +89,14 @@ Use `GET /api/health/live` for a lightweight liveness probe and `GET /api/health
 
 ## Scrape queue
 
-The API publishes price-check jobs to the `scrape-jobs` BullMQ queue and the worker consumes them in a separate process.
+The API publishes price-check jobs to the `scrape-jobs` BullMQ queue and the worker consumes them in a separate process. Only authenticated users with verified email can enqueue jobs.
 
 Example request:
 
 ```bash
 curl -X POST http://localhost:3000/api/scrape-jobs \
   -H "Content-Type: application/json" \
+  -H "Cookie: <better-auth-session-cookie>" \
   -d '{"productId":"prod_123","domainId":"domain_456"}'
 ```
 

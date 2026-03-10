@@ -5,11 +5,12 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 
 import { db } from '../db/database';
 import { authSchema } from '../db/schema';
+import { sendVerificationEmailMessage } from './email';
 
 const baseURL = process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? '3000'}`;
 const originCheckExemptPaths = (
   process.env.BETTER_AUTH_DISABLE_ORIGIN_CHECK_PATHS ??
-  '/sign-up/email,/sign-in/email,/request-password-reset,/reset-password,/change-password'
+  '/sign-up/email,/sign-in/email,/send-verification-email,/request-password-reset,/reset-password,/change-password'
 )
   .split(',')
   .map((path) => path.trim())
@@ -31,7 +32,20 @@ export const auth = betterAuth({
     }
   },
   secret: process.env.BETTER_AUTH_SECRET,
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 60 * 60 * 24,
+    async sendVerificationEmail({ user, url }) {
+      await sendVerificationEmailMessage({
+        email: user.email,
+        url,
+      });
+    },
+  },
   emailAndPassword: {
-    enabled: true
+    enabled: true,
+    requireEmailVerification: true,
   }
 });

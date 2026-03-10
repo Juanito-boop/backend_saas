@@ -7,11 +7,9 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 
 import {
-  AuthSessionGuard,
   CurrentUser,
   type AuthenticatedUser,
 } from '../../lib/auth-session';
@@ -29,7 +27,6 @@ type UpdateSubscriptionStatusBody = {
   currentPeriodEnd?: string;
 };
 
-@UseGuards(AuthSessionGuard)
 @Controller('api/teams/:teamId/subscription')
 export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) { }

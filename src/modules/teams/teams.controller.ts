@@ -8,11 +8,9 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 
 import {
-  AuthSessionGuard,
   CurrentUser,
   type AuthenticatedUser,
 } from '../../lib/auth-session';
@@ -33,7 +31,6 @@ type UpdateMemberRoleBody = {
   role?: string;
 };
 
-@UseGuards(AuthSessionGuard)
 @Controller('api/teams')
 export class TeamsController {
   constructor(private readonly teamsService: TeamsService) { }
