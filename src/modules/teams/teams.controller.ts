@@ -23,7 +23,7 @@ import { TeamsService } from './teams.service';
 
 @Controller('api/teams')
 export class TeamsController {
-  constructor(private readonly teamsService: TeamsService) { }
+  constructor(private readonly teamsService: TeamsService) {}
 
   @Post()
   async createTeam(

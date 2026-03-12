@@ -38,7 +38,7 @@ export class NotificationWebhooksService {
     private readonly notificationWebhookDeliveryService: NotificationWebhookDeliveryService,
     @Inject(TEAM_MEMBERSHIP_READER)
     private readonly teamMembershipReader: TeamMembershipReader,
-  ) { }
+  ) {}
 
   async listWebhooks(
     actorUserId: string,
