@@ -23,7 +23,7 @@ import {
 
 @Injectable()
 export class DrizzleNotificationWebhooksRepository implements NotificationWebhooksRepository {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(private readonly databaseService: DatabaseService) { }
 
   async listForTeam(teamId: string): Promise<NotificationWebhookRecord[]> {
     const webhooks = await this.databaseService.db
