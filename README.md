@@ -38,9 +38,12 @@ DATABASE_URL=postgres://...
 REDIS_URL=redis://localhost:6379
 PORT=3000
 BETTER_AUTH_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:4321
 BETTER_AUTH_SECRET=replace-with-a-random-32-character-secret
+BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:4321
 BETTER_AUTH_DISABLE_ORIGIN_CHECK=false
 BETTER_AUTH_DISABLE_ORIGIN_CHECK_PATHS=/sign-up/email,/sign-in/email,/send-verification-email,/request-password-reset,/reset-password,/change-password
+CORS_ORIGINS=http://localhost:4321
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 SMTP_SECURE=false
@@ -48,6 +51,12 @@ SMTP_USER=your-smtp-user
 SMTP_PASS=your-smtp-password
 SMTP_FROM="SaaS Backend <no-reply@example.com>"
 ```
+
+`CORS_ORIGINS` accepts a comma-separated list of allowed browser origins. For local Astro development, use `http://localhost:4321`.
+
+`FRONTEND_URL` defines where verification emails redirect after the backend validates the token. If it is not set, the backend falls back to `BETTER_AUTH_URL`.
+
+`BETTER_AUTH_TRUSTED_ORIGINS` accepts a comma-separated list of frontend origins allowed by Better Auth's own origin validation. If it is not set, the backend falls back to `CORS_ORIGINS` and then `FRONTEND_URL`.
 
 `BETTER_AUTH_DISABLE_ORIGIN_CHECK_PATHS` allows non-browser clients such as Postman or server-to-server callers that do not send an `Origin` header to use the listed auth endpoints. Set `BETTER_AUTH_DISABLE_ORIGIN_CHECK=true` only if you intentionally want to skip the origin check for every Better Auth route.
 
@@ -74,7 +83,7 @@ Nest routes are protected by default. Only the health endpoints are marked publi
 - `POST /api/auth/send-verification-email` re-sends the verification email for an existing user.
 - `GET /api/auth/verify-email?token=...` verifies the email and marks `users.email_verified = true`.
 - `api/teams/*` and `api/teams/:teamId/subscription` require both an authenticated session and `emailVerified = true`.
-- `POST /api/scrape-jobs` also requires both an authenticated session and `emailVerified = true`.
+- `POST /api/scrape-jobs`, `api/teams/:teamId/products`, and `api/notifications/*` also require both an authenticated session and `emailVerified = true`.
 
 This means invited members cannot access team or subscription endpoints until they verify their email address.
 
@@ -87,9 +96,40 @@ Use `GET /api/health/live` for a lightweight liveness probe and `GET /api/health
 
 `GET /api/health` currently returns the same payload as readiness for backward compatibility.
 
+## Architecture
+
+The backend follows a modular monolith structure with explicit separation between adapters, application services, domain rules, and infrastructure adapters in the business-heavy modules.
+
+- Nest controllers and guards act as HTTP adapters.
+- Request payloads are validated with shared Zod schemas through Nest pipes, and those same schemas drive TypeScript input types.
+- Repository results and service responses are parsed against Zod output schemas, so database and queue boundaries are also checked at runtime.
+- Application services orchestrate use cases.
+- Domain policies hold authorization and business rules.
+- Drizzle repositories implement persistence ports.
+- BullMQ workers run as separate processes and can scale independently from the API.
+
 ## Scrape queue
 
 The API publishes price-check jobs to the `scrape-jobs` BullMQ queue and the worker consumes them in a separate process. Only authenticated users with verified email can enqueue jobs.
+
+Storage is tiered to keep growth manageable:
+
+- `scrape_results` is the raw event stream and should be pruned on a short retention window.
+- `price_history` stores price changes only.
+- `price_history_hourly` and `price_history_daily` store compact long-term aggregates for dashboards and historical charts.
+
+Current domain endpoints:
+
+- `POST /api/teams/:teamId/products` creates a product for a team member.
+- `GET /api/teams/:teamId/products` lists products visible to team members.
+- `POST /api/scrape-jobs` schedules a scrape job after verifying product membership.
+- `GET /api/products/:productId/scrape-jobs` lists recent scrape jobs for authorized users.
+- `GET /api/products/:productId/history?resolution=change|hour|day` returns compact product history for charts and audit views.
+- `GET /api/notifications` lists notifications for the current user.
+- `PATCH /api/notifications/:notificationId/read` marks one notification as read.
+- `POST /api/teams/:teamId/subscription/events` emits subscription lifecycle events such as expiring soon, expired, or renewed, and creates a team notification with invoice/payment metadata.
+- `GET/POST/PATCH/DELETE /api/teams/:teamId/notification-webhooks` manages outgoing Slack, Discord, Teams, or generic webhooks.
+- `POST /api/teams/:teamId/notification-webhooks/:webhookId/test` sends a test delivery to a configured integration.
 
 Example request:
 

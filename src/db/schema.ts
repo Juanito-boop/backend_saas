@@ -138,6 +138,8 @@ export const products = pgTable("products", {
   htmlHash: varchar("html_hash", { length: 64 }),
   lastPrice: varchar("last_price", { length: 20 }),
   lastCheckedAt: timestamp("last_checked_at"),
+  lastPriceChangedAt: timestamp("last_price_changed_at"),
+  lastScrapeError: text("last_scrape_error"),
   currency: varchar("currency", { length: 10 }),
   status: varchar("status", { length: 20 }).default("active").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
@@ -157,10 +159,53 @@ export const priceHistory = pgTable("price_history", {
   id: uuid("id").defaultRandom().primaryKey(),
   productId: uuid("product_id").references(() => products.id).notNull(),
   price: varchar("price", { length: 20 }).notNull(),
+  currency: varchar("currency", { length: 10 }),
   checkedAt: timestamp("checked_at").defaultNow().notNull()
 },
   (table) => [
     index("idx_price_history_product_id").on(table.productId)
+  ]
+);
+
+export const priceHistoryHourly = pgTable("price_history_hourly", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  productId: uuid("product_id").references(() => products.id).notNull(),
+  bucketStart: timestamp("bucket_start").notNull(),
+  sampleCount: integer("sample_count").default(0).notNull(),
+  successCount: integer("success_count").default(0).notNull(),
+  failureCount: integer("failure_count").default(0).notNull(),
+  firstPrice: varchar("first_price", { length: 20 }),
+  minPrice: varchar("min_price", { length: 20 }),
+  maxPrice: varchar("max_price", { length: 20 }),
+  lastPrice: varchar("last_price", { length: 20 }),
+  currency: varchar("currency", { length: 10 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+},
+  (table) => [
+    uniqueIndex("price_history_hourly_product_bucket_unique").on(table.productId, table.bucketStart),
+    index("idx_price_history_hourly_product_id").on(table.productId)
+  ]
+);
+
+export const priceHistoryDaily = pgTable("price_history_daily", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  productId: uuid("product_id").references(() => products.id).notNull(),
+  bucketStart: timestamp("bucket_start").notNull(),
+  sampleCount: integer("sample_count").default(0).notNull(),
+  successCount: integer("success_count").default(0).notNull(),
+  failureCount: integer("failure_count").default(0).notNull(),
+  firstPrice: varchar("first_price", { length: 20 }),
+  minPrice: varchar("min_price", { length: 20 }),
+  maxPrice: varchar("max_price", { length: 20 }),
+  lastPrice: varchar("last_price", { length: 20 }),
+  currency: varchar("currency", { length: 10 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+},
+  (table) => [
+    uniqueIndex("price_history_daily_product_bucket_unique").on(table.productId, table.bucketStart),
+    index("idx_price_history_daily_product_id").on(table.productId)
   ]
 );
 
@@ -209,6 +254,46 @@ export const notifications = pgTable("notifications", {
 },
   (table) => [
     index("idx_notifications_user_id").on(table.userId)
+  ]
+);
+
+export const notificationWebhooks = pgTable("notification_webhooks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  teamId: uuid("team_id").references(() => teams.id).notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  provider: varchar("provider", { length: 20 }).notNull(),
+  url: text("url").notNull(),
+  eventTypes: json("event_types"),
+  enabled: boolean("enabled").default(true).notNull(),
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  lastDeliveredAt: timestamp("last_delivered_at"),
+  lastError: text("last_error"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+},
+  (table) => [
+    index("idx_notification_webhooks_team_id").on(table.teamId),
+    index("idx_notification_webhooks_enabled").on(table.enabled)
+  ]
+);
+
+export const notificationWebhookDeliveries = pgTable("notification_webhook_deliveries", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  webhookId: uuid("webhook_id").references(() => notificationWebhooks.id).notNull(),
+  teamId: uuid("team_id").references(() => teams.id).notNull(),
+  notificationId: uuid("notification_id").references(() => notifications.id),
+  eventType: varchar("event_type", { length: 50 }).notNull(),
+  success: boolean("success").notNull(),
+  statusCode: integer("status_code"),
+  requestBody: json("request_body"),
+  responseBody: text("response_body"),
+  error: text("error"),
+  attemptedAt: timestamp("attempted_at").defaultNow().notNull()
+},
+  (table) => [
+    index("idx_notification_webhook_deliveries_webhook_id").on(table.webhookId),
+    index("idx_notification_webhook_deliveries_team_id").on(table.teamId),
+    index("idx_notification_webhook_deliveries_notification_id").on(table.notificationId)
   ]
 );
 
@@ -262,12 +347,15 @@ export const scrapeResults = pgTable("scrape_results", {
   productId: uuid("product_id").references(() => products.id).notNull(),
   success: boolean("success").notNull(),
   price: varchar("price", { length: 20 }),
+  currency: varchar("currency", { length: 10 }),
   error: text("error"),
   responseTimeMs: integer("response_time_ms"),
+  retentionUntil: timestamp("retention_until"),
   checkedAt: timestamp("checked_at").defaultNow().notNull()
 },
   (table) => [
-    index("idx_scrape_results_product_id").on(table.productId)
+    index("idx_scrape_results_product_id").on(table.productId),
+    index("idx_scrape_results_retention_until").on(table.retentionUntil)
   ]
 );
 

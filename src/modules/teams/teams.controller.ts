@@ -1,35 +1,19 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import {
   CurrentUser,
   type AuthenticatedUser,
 } from '../../lib/auth-session';
+import {
+  createTeamBodySchema,
+  inviteUserBodySchema,
+  type CreateTeamBody,
+  type InviteUserBody,
+  type UpdateMemberRoleBody,
+  updateMemberRoleBodySchema,
+} from './domain/team.schemas';
 import { TeamsService, type ManageableTeamRole } from './teams.service';
-
-type CreateTeamBody = {
-  name?: string;
-  plan?: string;
-  urlLimit?: number;
-  userLimit?: number;
-};
-
-type InviteUserBody = {
-  userEmail?: string;
-};
-
-type UpdateMemberRoleBody = {
-  role?: string;
-};
 
 @Controller('api/teams')
 export class TeamsController {
@@ -38,12 +22,8 @@ export class TeamsController {
   @Post()
   async createTeam(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: CreateTeamBody,
+    @Body(new ZodValidationPipe(createTeamBodySchema)) body: CreateTeamBody,
   ) {
-    if (!body.name) {
-      throw new BadRequestException('name is required');
-    }
-
     return this.teamsService.createTeam(user.id, {
       name: body.name,
       plan: body.plan,
@@ -56,12 +36,8 @@ export class TeamsController {
   async inviteUser(
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
-    @Body() body: InviteUserBody,
+    @Body(new ZodValidationPipe(inviteUserBodySchema)) body: InviteUserBody,
   ) {
-    if (!body.userEmail) {
-      throw new BadRequestException('userEmail is required');
-    }
-
     return this.teamsService.inviteUser(user.id, {
       teamId,
       userEmail: body.userEmail,
@@ -98,12 +74,8 @@ export class TeamsController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
     @Param('memberUserId', new ParseUUIDPipe()) memberUserId: string,
-    @Body() body: UpdateMemberRoleBody,
+    @Body(new ZodValidationPipe(updateMemberRoleBodySchema)) body: UpdateMemberRoleBody,
   ) {
-    if (body.role !== 'admin' && body.role !== 'member') {
-      throw new BadRequestException('role must be either admin or member');
-    }
-
     return this.teamsService.updateMemberRole(user.id, {
       teamId,
       memberUserId,

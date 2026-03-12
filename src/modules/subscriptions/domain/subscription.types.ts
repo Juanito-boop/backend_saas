@@ -1,0 +1,1 @@
+export type { SubscriptionRecord } from './subscription.schemas';

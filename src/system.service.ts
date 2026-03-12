@@ -34,8 +34,6 @@ export type SystemHealthReport = {
   };
 };
 
-import { enqueueScrapeJob } from './lib/queues';
-
 @Injectable()
 export class SystemService {
   constructor(
@@ -123,13 +121,6 @@ export class SystemService {
     };
 
     return report;
-  }
-
-  async scheduleScrape(productId: string, domainId: string) {
-    return enqueueScrapeJob(this.scrapeQueue, {
-      productId,
-      domainId,
-    });
   }
 
   private async checkModule(

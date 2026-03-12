@@ -11,6 +11,12 @@ type SendEmailInput = {
 
 let cachedTransporter: Transporter | null = null;
 
+function getFrontendUrl() {
+  return process.env.FRONTEND_URL
+    ?? process.env.BETTER_AUTH_URL
+    ?? `http://localhost:${process.env.PORT ?? '3000'}`;
+}
+
 function getSmtpConfig() {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT ?? '587');
@@ -61,10 +67,7 @@ function getTransporter() {
 
 function normalizeVerificationUrl(url: string) {
   const parsedUrl = new URL(url);
-
-  if (parsedUrl.searchParams.get('callbackURL') === '/') {
-    parsedUrl.searchParams.delete('callbackURL');
-  }
+  parsedUrl.searchParams.set('callbackURL', getFrontendUrl());
 
   return parsedUrl.toString();
 }

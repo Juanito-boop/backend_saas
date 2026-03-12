@@ -1,31 +1,19 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import {
   CurrentUser,
   type AuthenticatedUser,
 } from '../../lib/auth-session';
+import {
+  createSubscriptionBodySchema,
+  type CreateSubscriptionBody,
+  type SubscriptionLifecycleEventBody,
+  subscriptionLifecycleEventBodySchema,
+  type UpdateSubscriptionStatusBody,
+  updateSubscriptionStatusBodySchema,
+} from './domain/subscription.schemas';
 import { SubscriptionsService } from './subscriptions.service';
-
-type CreateSubscriptionBody = {
-  provider?: string;
-  providerSubscriptionId?: string;
-  status?: string;
-  currentPeriodEnd?: string;
-};
-
-type UpdateSubscriptionStatusBody = {
-  status?: string;
-  currentPeriodEnd?: string;
-};
 
 @Controller('api/teams/:teamId/subscription')
 export class SubscriptionsController {
@@ -35,18 +23,14 @@ export class SubscriptionsController {
   async createSubscription(
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
-    @Body() body: CreateSubscriptionBody,
+    @Body(new ZodValidationPipe(createSubscriptionBodySchema)) body: CreateSubscriptionBody,
   ) {
-    if (!body.provider || !body.status) {
-      throw new BadRequestException('provider and status are required');
-    }
-
     return this.subscriptionsService.createSubscription(user.id, {
       teamId,
       provider: body.provider,
       providerSubscriptionId: body.providerSubscriptionId,
       status: body.status,
-      currentPeriodEnd: this.parseOptionalDate(body.currentPeriodEnd, 'currentPeriodEnd'),
+      currentPeriodEnd: body.currentPeriodEnd,
     });
   }
 
@@ -62,30 +46,34 @@ export class SubscriptionsController {
   async updateSubscriptionStatus(
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
-    @Body() body: UpdateSubscriptionStatusBody,
+    @Body(new ZodValidationPipe(updateSubscriptionStatusBodySchema)) body: UpdateSubscriptionStatusBody,
   ) {
-    if (!body.status) {
-      throw new BadRequestException('status is required');
-    }
-
     return this.subscriptionsService.updateSubscriptionStatus(user.id, {
       teamId,
       status: body.status,
-      currentPeriodEnd: this.parseOptionalDate(body.currentPeriodEnd, 'currentPeriodEnd'),
+      currentPeriodEnd: body.currentPeriodEnd,
     });
   }
 
-  private parseOptionalDate(value: string | undefined, fieldName: string) {
-    if (!value) {
-      return undefined;
-    }
-
-    const parsedDate = new Date(value);
-
-    if (Number.isNaN(parsedDate.getTime())) {
-      throw new BadRequestException(`${fieldName} must be a valid ISO date string`);
-    }
-
-    return parsedDate;
+  @Post('events')
+  async emitLifecycleEvent(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('teamId', new ParseUUIDPipe()) teamId: string,
+    @Body(new ZodValidationPipe(subscriptionLifecycleEventBodySchema)) body: SubscriptionLifecycleEventBody,
+  ) {
+    return this.subscriptionsService.emitLifecycleEvent(user.id, {
+      teamId,
+      eventType: body.eventType,
+      provider: body.provider,
+      providerSubscriptionId: body.providerSubscriptionId,
+      status: body.status,
+      currentPeriodEnd: body.currentPeriodEnd,
+      invoiceId: body.invoiceId,
+      invoiceUrl: body.invoiceUrl,
+      paymentReference: body.paymentReference,
+      amount: body.amount,
+      currency: body.currency,
+      metadata: body.metadata,
+    });
   }
 }

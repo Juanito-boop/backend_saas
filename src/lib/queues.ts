@@ -9,6 +9,7 @@ export const SCRAPE_JOB_NAME = 'scrape-product';
 export const SCRAPE_QUEUE = Symbol('SCRAPE_QUEUE');
 
 export type ScrapeJobData = {
+  scrapeJobId?: string;
   productId: string;
   domainId: string;
 };
