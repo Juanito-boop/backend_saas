@@ -23,7 +23,7 @@ import {
 
 @Injectable()
 export class DrizzleTeamsRepository implements TeamsRepository {
-  constructor(private readonly databaseService: DatabaseService) { }
+  constructor(private readonly databaseService: DatabaseService) {}
 
   async createTeam(input: {
     ownerId: string;
@@ -43,7 +43,11 @@ export class DrizzleTeamsRepository implements TeamsRepository {
       })
       .returning();
 
-    return parseSchema(teamRecordSchema, createdTeam, 'DrizzleTeamsRepository.createTeam');
+    return parseSchema(
+      teamRecordSchema,
+      createdTeam,
+      'DrizzleTeamsRepository.createTeam',
+    );
   }
 
   async deleteTeam(teamId: string) {
@@ -57,7 +61,11 @@ export class DrizzleTeamsRepository implements TeamsRepository {
       .where(eq(teams.id, teamId))
       .limit(1);
 
-    return parseOptionalSchema(teamRecordSchema, team, 'DrizzleTeamsRepository.findTeamById');
+    return parseOptionalSchema(
+      teamRecordSchema,
+      team,
+      'DrizzleTeamsRepository.findTeamById',
+    );
   }
 
   async createMembership(
@@ -79,10 +87,17 @@ export class DrizzleTeamsRepository implements TeamsRepository {
         role: teamMembers.role,
       });
 
-    return parseSchema(teamMembershipSchema, membership, 'DrizzleTeamsRepository.createMembership');
+    return parseSchema(
+      teamMembershipSchema,
+      membership,
+      'DrizzleTeamsRepository.createMembership',
+    );
   }
 
-  async findMembership(teamId: string, userId: string): Promise<TeamMembership | null> {
+  async findMembership(
+    teamId: string,
+    userId: string,
+  ): Promise<TeamMembership | null> {
     const [membership] = await this.databaseService.db
       .select({
         id: teamMembers.id,
@@ -91,10 +106,16 @@ export class DrizzleTeamsRepository implements TeamsRepository {
         role: teamMembers.role,
       })
       .from(teamMembers)
-      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)))
+      .where(
+        and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)),
+      )
       .limit(1);
 
-    return parseOptionalSchema(teamMembershipSchema, membership, 'DrizzleTeamsRepository.findMembership');
+    return parseOptionalSchema(
+      teamMembershipSchema,
+      membership,
+      'DrizzleTeamsRepository.findMembership',
+    );
   }
 
   async countMembers(teamId: string) {
@@ -116,7 +137,11 @@ export class DrizzleTeamsRepository implements TeamsRepository {
       .where(eq(users.email, email))
       .limit(1);
 
-    return parseOptionalSchema(teamUserSchema, user, 'DrizzleTeamsRepository.findUserByEmail');
+    return parseOptionalSchema(
+      teamUserSchema,
+      user,
+      'DrizzleTeamsRepository.findUserByEmail',
+    );
   }
 
   async listTeamsForUser(userId: string): Promise<TeamSummary[]> {
@@ -135,7 +160,11 @@ export class DrizzleTeamsRepository implements TeamsRepository {
       .innerJoin(teams, eq(teamMembers.teamId, teams.id))
       .where(eq(teamMembers.userId, userId));
 
-    return parseSchema(teamSummaryListSchema, teamSummaries, 'DrizzleTeamsRepository.listTeamsForUser');
+    return parseSchema(
+      teamSummaryListSchema,
+      teamSummaries,
+      'DrizzleTeamsRepository.listTeamsForUser',
+    );
   }
 
   async listMembers(teamId: string): Promise<TeamMemberSummary[]> {
@@ -151,13 +180,19 @@ export class DrizzleTeamsRepository implements TeamsRepository {
       .innerJoin(users, eq(teamMembers.userId, users.id))
       .where(eq(teamMembers.teamId, teamId));
 
-    return parseSchema(teamMemberSummaryListSchema, members, 'DrizzleTeamsRepository.listMembers');
+    return parseSchema(
+      teamMemberSummaryListSchema,
+      members,
+      'DrizzleTeamsRepository.listMembers',
+    );
   }
 
   async removeMembership(teamId: string, userId: string) {
     await this.databaseService.db
       .delete(teamMembers)
-      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)));
+      .where(
+        and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)),
+      );
   }
 
   async updateMembershipRole(
@@ -168,7 +203,9 @@ export class DrizzleTeamsRepository implements TeamsRepository {
     const [membership] = await this.databaseService.db
       .update(teamMembers)
       .set({ role })
-      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)))
+      .where(
+        and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)),
+      )
       .returning({
         id: teamMembers.id,
         teamId: teamMembers.teamId,
@@ -176,6 +213,10 @@ export class DrizzleTeamsRepository implements TeamsRepository {
         role: teamMembers.role,
       });
 
-    return parseSchema(teamMembershipSchema, membership, 'DrizzleTeamsRepository.updateMembershipRole');
+    return parseSchema(
+      teamMembershipSchema,
+      membership,
+      'DrizzleTeamsRepository.updateMembershipRole',
+    );
   }
 }

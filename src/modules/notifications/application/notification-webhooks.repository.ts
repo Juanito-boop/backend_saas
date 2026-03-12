@@ -4,7 +4,9 @@ import type {
   NotificationWebhookRecord,
 } from '../domain/notification-webhook.schemas';
 
-export const NOTIFICATION_WEBHOOKS_REPOSITORY = Symbol('NOTIFICATION_WEBHOOKS_REPOSITORY');
+export const NOTIFICATION_WEBHOOKS_REPOSITORY = Symbol(
+  'NOTIFICATION_WEBHOOKS_REPOSITORY',
+);
 
 export type CreateNotificationWebhookRecordInput = {
   teamId: string;
@@ -38,11 +40,22 @@ export type CreateNotificationWebhookDeliveryRecordInput = {
 export interface NotificationWebhooksRepository {
   listForTeam(teamId: string): Promise<NotificationWebhookRecord[]>;
   listActiveForTeam(teamId: string): Promise<NotificationWebhookRecord[]>;
-  findById(teamId: string, webhookId: string): Promise<NotificationWebhookRecord | null>;
-  create(input: CreateNotificationWebhookRecordInput): Promise<NotificationWebhookRecord>;
-  update(teamId: string, webhookId: string, input: UpdateNotificationWebhookRecordInput): Promise<NotificationWebhookRecord | null>;
+  findById(
+    teamId: string,
+    webhookId: string,
+  ): Promise<NotificationWebhookRecord | null>;
+  create(
+    input: CreateNotificationWebhookRecordInput,
+  ): Promise<NotificationWebhookRecord>;
+  update(
+    teamId: string,
+    webhookId: string,
+    input: UpdateNotificationWebhookRecordInput,
+  ): Promise<NotificationWebhookRecord | null>;
   delete(teamId: string, webhookId: string): Promise<void>;
-  recordDelivery(input: CreateNotificationWebhookDeliveryRecordInput): Promise<NotificationWebhookDeliveryRecord>;
+  recordDelivery(
+    input: CreateNotificationWebhookDeliveryRecordInput,
+  ): Promise<NotificationWebhookDeliveryRecord>;
   markSuccess(webhookId: string, deliveredAt: Date): Promise<void>;
   markFailure(webhookId: string, error: string): Promise<void>;
 }

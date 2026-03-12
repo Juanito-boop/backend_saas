@@ -2,13 +2,22 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { parseSchema } from '../../../common/zod/parse';
 import { NotFoundError } from '../../../common/errors/application-error';
-import { TEAM_MEMBERSHIP_READER, type TeamMembershipReader } from '../../teams/application/team-membership-reader';
+import {
+  TEAM_MEMBERSHIP_READER,
+  type TeamMembershipReader,
+} from '../../teams/application/team-membership-reader';
 import {
   PRODUCTS_REPOSITORY,
   type ProductsRepository,
 } from './products.repository';
-import type { CreateProductBody, ProductRecord } from '../domain/product.schemas';
-import { productRecordListSchema, productRecordSchema } from '../domain/product.schemas';
+import type {
+  CreateProductBody,
+  ProductRecord,
+} from '../domain/product.schemas';
+import {
+  productRecordListSchema,
+  productRecordSchema,
+} from '../domain/product.schemas';
 
 export type CreateProductInput = {
   teamId: string;
@@ -21,10 +30,16 @@ export class ProductsService {
     private readonly productsRepository: ProductsRepository,
     @Inject(TEAM_MEMBERSHIP_READER)
     private readonly teamMembershipReader: TeamMembershipReader,
-  ) { }
+  ) {}
 
-  async createProduct(actorUserId: string, input: CreateProductInput): Promise<ProductRecord> {
-    await this.teamMembershipReader.getMembershipOrThrow(input.teamId, actorUserId);
+  async createProduct(
+    actorUserId: string,
+    input: CreateProductInput,
+  ): Promise<ProductRecord> {
+    await this.teamMembershipReader.getMembershipOrThrow(
+      input.teamId,
+      actorUserId,
+    );
 
     const product = await this.productsRepository.createProduct({
       teamId: input.teamId,
@@ -39,24 +54,45 @@ export class ProductsService {
       scrapeStrategy: input.scrapeStrategy,
     });
 
-    return parseSchema(productRecordSchema, product, 'ProductsService.createProduct');
+    return parseSchema(
+      productRecordSchema,
+      product,
+      'ProductsService.createProduct',
+    );
   }
 
-  async listProducts(actorUserId: string, teamId: string): Promise<ProductRecord[]> {
+  async listProducts(
+    actorUserId: string,
+    teamId: string,
+  ): Promise<ProductRecord[]> {
     await this.teamMembershipReader.getMembershipOrThrow(teamId, actorUserId);
     const products = await this.productsRepository.listProductsByTeam(teamId);
-    return parseSchema(productRecordListSchema, products, 'ProductsService.listProducts');
+    return parseSchema(
+      productRecordListSchema,
+      products,
+      'ProductsService.listProducts',
+    );
   }
 
-  async getProductOrThrow(actorUserId: string, productId: string): Promise<ProductRecord> {
+  async getProductOrThrow(
+    actorUserId: string,
+    productId: string,
+  ): Promise<ProductRecord> {
     const product = await this.productsRepository.findProductById(productId);
 
     if (!product) {
       throw new NotFoundError('Product not found');
     }
 
-    await this.teamMembershipReader.getMembershipOrThrow(product.teamId, actorUserId);
+    await this.teamMembershipReader.getMembershipOrThrow(
+      product.teamId,
+      actorUserId,
+    );
 
-    return parseSchema(productRecordSchema, product, 'ProductsService.getProductOrThrow');
+    return parseSchema(
+      productRecordSchema,
+      product,
+      'ProductsService.getProductOrThrow',
+    );
   }
 }

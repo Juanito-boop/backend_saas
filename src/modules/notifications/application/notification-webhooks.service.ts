@@ -2,19 +2,20 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { parseSchema } from '../../../common/zod/parse';
 import { NotFoundError } from '../../../common/errors/application-error';
-import { TEAM_MEMBERSHIP_READER, type TeamMembershipReader } from '../../teams/application/team-membership-reader';
+import {
+  TEAM_MEMBERSHIP_READER,
+  type TeamMembershipReader,
+} from '../../teams/application/team-membership-reader';
 import { assertCanManageMembers } from '../../teams/domain/team-policies';
 import type { NotificationRecord } from '../domain/notification.schemas';
 import {
   createNotificationWebhookBodySchema,
   dispatchWebhookResultListSchema,
-  dispatchWebhookResultSchema,
   notificationWebhookRecordListSchema,
   notificationWebhookRecordSchema,
   type CreateNotificationWebhookBody,
   type DispatchWebhookResult,
   type NotificationEventType,
-  type NotificationWebhookPayload,
   type NotificationWebhookRecord,
   type UpdateNotificationWebhookBody,
   updateNotificationWebhookBodySchema,
@@ -37,12 +38,20 @@ export class NotificationWebhooksService {
     private readonly notificationWebhookDeliveryService: NotificationWebhookDeliveryService,
     @Inject(TEAM_MEMBERSHIP_READER)
     private readonly teamMembershipReader: TeamMembershipReader,
-  ) { }
+  ) {}
 
-  async listWebhooks(actorUserId: string, teamId: string): Promise<NotificationWebhookRecord[]> {
+  async listWebhooks(
+    actorUserId: string,
+    teamId: string,
+  ): Promise<NotificationWebhookRecord[]> {
     await this.assertCanManageWebhooks(actorUserId, teamId);
-    const webhooks = await this.notificationWebhooksRepository.listForTeam(teamId);
-    return parseSchema(notificationWebhookRecordListSchema, webhooks, 'NotificationWebhooksService.listWebhooks');
+    const webhooks =
+      await this.notificationWebhooksRepository.listForTeam(teamId);
+    return parseSchema(
+      notificationWebhookRecordListSchema,
+      webhooks,
+      'NotificationWebhooksService.listWebhooks',
+    );
   }
 
   async createWebhook(
@@ -51,7 +60,11 @@ export class NotificationWebhooksService {
     body: CreateNotificationWebhookBody,
   ): Promise<NotificationWebhookRecord> {
     await this.assertCanManageWebhooks(actorUserId, teamId);
-    const input = parseSchema(createNotificationWebhookBodySchema, body, 'NotificationWebhooksService.createWebhook.input');
+    const input = parseSchema(
+      createNotificationWebhookBodySchema,
+      body,
+      'NotificationWebhooksService.createWebhook.input',
+    );
     const webhook = await this.notificationWebhooksRepository.create({
       teamId,
       name: input.name,
@@ -62,7 +75,11 @@ export class NotificationWebhooksService {
       createdBy: actorUserId,
     });
 
-    return parseSchema(notificationWebhookRecordSchema, webhook, 'NotificationWebhooksService.createWebhook');
+    return parseSchema(
+      notificationWebhookRecordSchema,
+      webhook,
+      'NotificationWebhooksService.createWebhook',
+    );
   }
 
   async updateWebhook(
@@ -72,19 +89,34 @@ export class NotificationWebhooksService {
     body: UpdateNotificationWebhookBody,
   ): Promise<NotificationWebhookRecord> {
     await this.assertCanManageWebhooks(actorUserId, teamId);
-    const input = parseSchema(updateNotificationWebhookBodySchema, body, 'NotificationWebhooksService.updateWebhook.input');
-    const webhook = await this.notificationWebhooksRepository.update(teamId, webhookId, input);
+    const input = parseSchema(
+      updateNotificationWebhookBodySchema,
+      body,
+      'NotificationWebhooksService.updateWebhook.input',
+    );
+    const webhook = await this.notificationWebhooksRepository.update(
+      teamId,
+      webhookId,
+      input,
+    );
 
     if (!webhook) {
       throw new NotFoundError('Notification webhook not found');
     }
 
-    return parseSchema(notificationWebhookRecordSchema, webhook, 'NotificationWebhooksService.updateWebhook');
+    return parseSchema(
+      notificationWebhookRecordSchema,
+      webhook,
+      'NotificationWebhooksService.updateWebhook',
+    );
   }
 
   async deleteWebhook(actorUserId: string, teamId: string, webhookId: string) {
     await this.assertCanManageWebhooks(actorUserId, teamId);
-    const webhook = await this.notificationWebhooksRepository.findById(teamId, webhookId);
+    const webhook = await this.notificationWebhooksRepository.findById(
+      teamId,
+      webhookId,
+    );
 
     if (!webhook) {
       throw new NotFoundError('Notification webhook not found');
@@ -95,9 +127,16 @@ export class NotificationWebhooksService {
     return { success: true as const };
   }
 
-  async sendTest(actorUserId: string, teamId: string, webhookId: string): Promise<DispatchWebhookResult> {
+  async sendTest(
+    actorUserId: string,
+    teamId: string,
+    webhookId: string,
+  ): Promise<DispatchWebhookResult> {
     await this.assertCanManageWebhooks(actorUserId, teamId);
-    const webhook = await this.notificationWebhooksRepository.findById(teamId, webhookId);
+    const webhook = await this.notificationWebhooksRepository.findById(
+      teamId,
+      webhookId,
+    );
 
     if (!webhook) {
       throw new NotFoundError('Notification webhook not found');
@@ -108,7 +147,8 @@ export class NotificationWebhooksService {
       teamId,
       eventType: 'notification.test',
       title: 'Webhook test',
-      message: 'This is a test notification sent from the backend integration module.',
+      message:
+        'This is a test notification sent from the backend integration module.',
       metadata: {
         triggeredBy: actorUserId,
         source: 'manual-test',
@@ -124,7 +164,8 @@ export class NotificationWebhooksService {
     metadata?: unknown;
     notification?: NotificationRecord;
   }) {
-    const webhooks = await this.notificationWebhooksRepository.listActiveForTeam(input.teamId);
+    const webhooks =
+      await this.notificationWebhooksRepository.listActiveForTeam(input.teamId);
 
     if (webhooks.length === 0) {
       return [] satisfies DispatchWebhookResult[];
@@ -132,23 +173,35 @@ export class NotificationWebhooksService {
 
     const results = await Promise.all(
       webhooks
-        .filter((webhook) => !webhook.eventTypes || webhook.eventTypes.includes(input.eventType))
-        .map((webhook) => this.notificationWebhookDeliveryService.dispatchToWebhook({
-          webhook,
-          teamId: input.teamId,
-          eventType: input.eventType,
-          title: input.title,
-          message: input.message,
-          metadata: input.metadata,
-          notification: input.notification,
-        })),
+        .filter(
+          (webhook) =>
+            !webhook.eventTypes || webhook.eventTypes.includes(input.eventType),
+        )
+        .map((webhook) =>
+          this.notificationWebhookDeliveryService.dispatchToWebhook({
+            webhook,
+            teamId: input.teamId,
+            eventType: input.eventType,
+            title: input.title,
+            message: input.message,
+            metadata: input.metadata,
+            notification: input.notification,
+          }),
+        ),
     );
 
-    return parseSchema(dispatchWebhookResultListSchema, results, 'NotificationWebhooksService.dispatchTeamEvent');
+    return parseSchema(
+      dispatchWebhookResultListSchema,
+      results,
+      'NotificationWebhooksService.dispatchTeamEvent',
+    );
   }
 
   private async assertCanManageWebhooks(actorUserId: string, teamId: string) {
-    const membership = await this.teamMembershipReader.getMembershipOrThrow(teamId, actorUserId);
+    const membership = await this.teamMembershipReader.getMembershipOrThrow(
+      teamId,
+      actorUserId,
+    );
     assertCanManageMembers(membership.role);
   }
 }

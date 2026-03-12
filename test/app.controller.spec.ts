@@ -43,8 +43,9 @@ describe('SystemController', () => {
 
   describe('readiness', () => {
     it('should return the readiness report and set status 200 when healthy', async () => {
+      const status = jest.fn();
       const response = {
-        status: jest.fn(),
+        status,
       } as unknown as Response;
 
       const report = {
@@ -62,8 +63,10 @@ describe('SystemController', () => {
 
       systemServiceMock.getReadiness.mockResolvedValue(report);
 
-      await expect(systemController.getReadiness(response)).resolves.toEqual(report);
-      expect(response.status).toHaveBeenCalledWith(200);
+      await expect(systemController.getReadiness(response)).resolves.toEqual(
+        report,
+      );
+      expect(status).toHaveBeenCalledWith(200);
     });
   });
 });

@@ -75,19 +75,26 @@ export function assertUserExists<T>(user: T | null): T {
   return user;
 }
 
-export function assertMembershipDoesNotExist(membership: TeamMembership | null) {
+export function assertMembershipDoesNotExist(
+  membership: TeamMembership | null,
+) {
   if (membership) {
     throw new ConflictError('User is already a member of this team');
   }
 }
 
-export function assertWithinTeamUserLimit(currentMembers: number, userLimit: number) {
+export function assertWithinTeamUserLimit(
+  currentMembers: number,
+  userLimit: number,
+) {
   if (currentMembers >= userLimit) {
     throw new ConflictError('This team has reached its user limit');
   }
 }
 
-export function assertMemberCanBeRemovedOrChanged(targetMembership: TeamMembership) {
+export function assertMemberCanBeRemovedOrChanged(
+  targetMembership: TeamMembership,
+) {
   if (targetMembership.role === 'owner') {
     throw new ForbiddenError('Owner cannot be removed or role-changed');
   }

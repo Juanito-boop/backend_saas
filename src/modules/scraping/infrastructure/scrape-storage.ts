@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, lte } from 'drizzle-orm';
+import { and, eq, lte } from 'drizzle-orm';
 
 import { parseSchema } from '../../../common/zod/parse';
 import { db } from '../../../db/database';
@@ -87,7 +87,10 @@ function pickMaxPrice(current: string | null, incoming: string | null) {
 
 async function upsertAggregate(
   resolution: 'hour' | 'day',
-  input: Pick<RecordScrapeObservationInput, 'productId' | 'success' | 'checkedAt' | 'price' | 'currency'>,
+  input: Pick<
+    RecordScrapeObservationInput,
+    'productId' | 'success' | 'checkedAt' | 'price' | 'currency'
+  >,
 ) {
   const bucketStart = getBucketStart(input.checkedAt, resolution);
   const table = resolution === 'hour' ? priceHistoryHourly : priceHistoryDaily;
@@ -95,7 +98,12 @@ async function upsertAggregate(
   const [existingAggregate] = await db
     .select()
     .from(table)
-    .where(and(eq(table.productId, input.productId), eq(table.bucketStart, bucketStart)))
+    .where(
+      and(
+        eq(table.productId, input.productId),
+        eq(table.bucketStart, bucketStart),
+      ),
+    )
     .limit(1);
 
   if (!existingAggregate) {
@@ -112,7 +120,11 @@ async function upsertAggregate(
         })
         .returning();
 
-      return parseSchema(priceHistoryAggregateSchema, createdAggregate, `scrape-storage.upsertAggregate.${resolution}.create`);
+      return parseSchema(
+        priceHistoryAggregateSchema,
+        createdAggregate,
+        `scrape-storage.upsertAggregate.${resolution}.create`,
+      );
     }
 
     const [createdAggregate] = await db
@@ -131,7 +143,11 @@ async function upsertAggregate(
       })
       .returning();
 
-    return parseSchema(priceHistoryAggregateSchema, createdAggregate, `scrape-storage.upsertAggregate.${resolution}.create`);
+    return parseSchema(
+      priceHistoryAggregateSchema,
+      createdAggregate,
+      `scrape-storage.upsertAggregate.${resolution}.create`,
+    );
   }
 
   const [updatedAggregate] = await db
@@ -150,10 +166,17 @@ async function upsertAggregate(
     .where(eq(table.id, existingAggregate.id))
     .returning();
 
-  return parseSchema(priceHistoryAggregateSchema, updatedAggregate, `scrape-storage.upsertAggregate.${resolution}.update`);
+  return parseSchema(
+    priceHistoryAggregateSchema,
+    updatedAggregate,
+    `scrape-storage.upsertAggregate.${resolution}.update`,
+  );
 }
 
-export async function markScrapeJobStarted(scrapeJobId: string, workerId: string) {
+export async function markScrapeJobStarted(
+  scrapeJobId: string,
+  workerId: string,
+) {
   await db
     .update(scrapeJobs)
     .set({
@@ -164,7 +187,10 @@ export async function markScrapeJobStarted(scrapeJobId: string, workerId: string
     .where(eq(scrapeJobs.id, scrapeJobId));
 }
 
-export async function markScrapeJobCompleted(scrapeJobId: string, workerId: string) {
+export async function markScrapeJobCompleted(
+  scrapeJobId: string,
+  workerId: string,
+) {
   await db
     .update(scrapeJobs)
     .set({
@@ -175,7 +201,10 @@ export async function markScrapeJobCompleted(scrapeJobId: string, workerId: stri
     .where(eq(scrapeJobs.id, scrapeJobId));
 }
 
-export async function markScrapeJobFailed(scrapeJobId: string, workerId: string) {
+export async function markScrapeJobFailed(
+  scrapeJobId: string,
+  workerId: string,
+) {
   await db
     .update(scrapeJobs)
     .set({
@@ -189,7 +218,11 @@ export async function markScrapeJobFailed(scrapeJobId: string, workerId: string)
 export async function recordScrapeObservation(
   input: RecordScrapeObservationInput,
 ): Promise<RecordScrapeObservationResult> {
-  const parsedInput = parseSchema(recordScrapeObservationInputSchema, input, 'scrape-storage.recordScrapeObservation.input');
+  const parsedInput = parseSchema(
+    recordScrapeObservationInputSchema,
+    input,
+    'scrape-storage.recordScrapeObservation.input',
+  );
   const [product] = await db
     .select({
       id: products.id,
@@ -205,7 +238,11 @@ export async function recordScrapeObservation(
     .where(eq(products.id, parsedInput.productId))
     .limit(1);
 
-  const priceChanged = Boolean(parsedInput.success && parsedInput.price && product?.lastPrice !== parsedInput.price);
+  const priceChanged = Boolean(
+    parsedInput.success &&
+    parsedInput.price &&
+    product?.lastPrice !== parsedInput.price,
+  );
 
   await db
     .update(scrapeJobs)
@@ -232,15 +269,25 @@ export async function recordScrapeObservation(
     })
     .returning();
 
-  const parsedRawResult = parseSchema(scrapeResultRecordSchema, rawResult, 'scrape-storage.recordScrapeObservation.rawResult');
+  const parsedRawResult = parseSchema(
+    scrapeResultRecordSchema,
+    rawResult,
+    'scrape-storage.recordScrapeObservation.rawResult',
+  );
 
   await db
     .update(products)
     .set({
-      lastPrice: parsedInput.success ? (parsedInput.price ?? product?.lastPrice ?? null) : product?.lastPrice ?? null,
+      lastPrice: parsedInput.success
+        ? (parsedInput.price ?? product?.lastPrice ?? null)
+        : (product?.lastPrice ?? null),
       lastCheckedAt: parsedInput.checkedAt,
-      lastPriceChangedAt: priceChanged ? parsedInput.checkedAt : product?.lastPriceChangedAt ?? null,
-      lastScrapeError: parsedInput.success ? null : (parsedInput.error ?? 'Unknown scrape error'),
+      lastPriceChangedAt: priceChanged
+        ? parsedInput.checkedAt
+        : (product?.lastPriceChangedAt ?? null),
+      lastScrapeError: parsedInput.success
+        ? null
+        : (parsedInput.error ?? 'Unknown scrape error'),
       currency: parsedInput.currency ?? product?.currency ?? null,
       htmlHash: parsedInput.htmlHash ?? product?.htmlHash ?? null,
       status: parsedInput.success ? 'active' : 'error',
@@ -259,12 +306,18 @@ export async function recordScrapeObservation(
   await upsertAggregate('hour', parsedInput);
   await upsertAggregate('day', parsedInput);
 
-  return parseSchema(recordScrapeObservationResultSchema, {
-    rawResult: parsedRawResult,
-    priceChanged,
-  }, 'scrape-storage.recordScrapeObservation.result');
+  return parseSchema(
+    recordScrapeObservationResultSchema,
+    {
+      rawResult: parsedRawResult,
+      priceChanged,
+    },
+    'scrape-storage.recordScrapeObservation.result',
+  );
 }
 
 export async function pruneExpiredRawScrapeResults(cutoff: Date) {
-  await db.delete(scrapeResults).where(lte(scrapeResults.retentionUntil, cutoff));
+  await db
+    .delete(scrapeResults)
+    .where(lte(scrapeResults.retentionUntil, cutoff));
 }

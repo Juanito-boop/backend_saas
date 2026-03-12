@@ -26,4 +26,4 @@ import { ScrapingService } from './scraping.service';
     },
   ],
 })
-export class ScrapingModule { }
+export class ScrapingModule {}

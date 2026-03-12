@@ -6,7 +6,4 @@ export type {
   RemoveMemberInput,
   UpdateMemberRoleInput,
 } from './application/teams.service';
-export type {
-  ManageableTeamRole,
-  TeamRole,
-} from './domain/team.types';
+export type { ManageableTeamRole, TeamRole } from './domain/team.types';

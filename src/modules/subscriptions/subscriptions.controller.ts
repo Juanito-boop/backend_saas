@@ -1,10 +1,15 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import {
-  CurrentUser,
-  type AuthenticatedUser,
-} from '../../lib/auth-session';
+import { CurrentUser, type AuthenticatedUser } from '../../lib/auth-session';
 import {
   createSubscriptionBodySchema,
   type CreateSubscriptionBody,
@@ -17,13 +22,14 @@ import { SubscriptionsService } from './subscriptions.service';
 
 @Controller('api/teams/:teamId/subscription')
 export class SubscriptionsController {
-  constructor(private readonly subscriptionsService: SubscriptionsService) { }
+  constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
   @Post()
   async createSubscription(
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
-    @Body(new ZodValidationPipe(createSubscriptionBodySchema)) body: CreateSubscriptionBody,
+    @Body(new ZodValidationPipe(createSubscriptionBodySchema))
+    body: CreateSubscriptionBody,
   ) {
     return this.subscriptionsService.createSubscription(user.id, {
       teamId,
@@ -46,7 +52,8 @@ export class SubscriptionsController {
   async updateSubscriptionStatus(
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
-    @Body(new ZodValidationPipe(updateSubscriptionStatusBodySchema)) body: UpdateSubscriptionStatusBody,
+    @Body(new ZodValidationPipe(updateSubscriptionStatusBodySchema))
+    body: UpdateSubscriptionStatusBody,
   ) {
     return this.subscriptionsService.updateSubscriptionStatus(user.id, {
       teamId,
@@ -59,7 +66,8 @@ export class SubscriptionsController {
   async emitLifecycleEvent(
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
-    @Body(new ZodValidationPipe(subscriptionLifecycleEventBodySchema)) body: SubscriptionLifecycleEventBody,
+    @Body(new ZodValidationPipe(subscriptionLifecycleEventBodySchema))
+    body: SubscriptionLifecycleEventBody,
   ) {
     return this.subscriptionsService.emitLifecycleEvent(user.id, {
       teamId,

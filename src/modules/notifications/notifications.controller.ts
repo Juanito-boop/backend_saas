@@ -5,7 +5,7 @@ import { NotificationsService } from './notifications.service';
 
 @Controller('api/notifications')
 export class NotificationsController {
-  constructor(private readonly notificationsService: NotificationsService) { }
+  constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
   async listNotifications(@CurrentUser() user: AuthenticatedUser) {

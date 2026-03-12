@@ -7,8 +7,15 @@ import {
   NOTIFICATIONS_REPOSITORY,
   type NotificationsRepository,
 } from './notifications.repository';
-import type { CreateNotificationInput, NotificationRecord } from '../domain/notification.schemas';
-import { createNotificationInputSchema, notificationRecordListSchema, notificationRecordSchema } from '../domain/notification.schemas';
+import type {
+  CreateNotificationInput,
+  NotificationRecord,
+} from '../domain/notification.schemas';
+import {
+  createNotificationInputSchema,
+  notificationRecordListSchema,
+  notificationRecordSchema,
+} from '../domain/notification.schemas';
 
 @Injectable()
 export class NotificationsService {
@@ -16,10 +23,17 @@ export class NotificationsService {
     @Inject(NOTIFICATIONS_REPOSITORY)
     private readonly notificationsRepository: NotificationsRepository,
     private readonly notificationWebhooksService: NotificationWebhooksService,
-  ) { }
+  ) {}
 
-  async createNotification(userId: string, input: CreateNotificationInput): Promise<NotificationRecord> {
-    const notificationInput = parseSchema(createNotificationInputSchema, input, 'NotificationsService.createNotification.input');
+  async createNotification(
+    userId: string,
+    input: CreateNotificationInput,
+  ): Promise<NotificationRecord> {
+    const notificationInput = parseSchema(
+      createNotificationInputSchema,
+      input,
+      'NotificationsService.createNotification.input',
+    );
     const notification = await this.notificationsRepository.createNotification({
       userId,
       title: notificationInput.title,
@@ -27,7 +41,11 @@ export class NotificationsService {
       metadata: notificationInput.metadata,
     });
 
-    return parseSchema(notificationRecordSchema, notification, 'NotificationsService.createNotification');
+    return parseSchema(
+      notificationRecordSchema,
+      notification,
+      'NotificationsService.createNotification',
+    );
   }
 
   async createTeamNotification(input: {
@@ -56,17 +74,32 @@ export class NotificationsService {
   }
 
   async listNotifications(userId: string): Promise<NotificationRecord[]> {
-    const notifications = await this.notificationsRepository.listNotificationsForUser(userId);
-    return parseSchema(notificationRecordListSchema, notifications, 'NotificationsService.listNotifications');
+    const notifications =
+      await this.notificationsRepository.listNotificationsForUser(userId);
+    return parseSchema(
+      notificationRecordListSchema,
+      notifications,
+      'NotificationsService.listNotifications',
+    );
   }
 
-  async markAsRead(userId: string, notificationId: string): Promise<NotificationRecord> {
-    const notification = await this.notificationsRepository.markAsRead(userId, notificationId);
+  async markAsRead(
+    userId: string,
+    notificationId: string,
+  ): Promise<NotificationRecord> {
+    const notification = await this.notificationsRepository.markAsRead(
+      userId,
+      notificationId,
+    );
 
     if (!notification) {
       throw new NotFoundError('Notification not found');
     }
 
-    return parseSchema(notificationRecordSchema, notification, 'NotificationsService.markAsRead');
+    return parseSchema(
+      notificationRecordSchema,
+      notification,
+      'NotificationsService.markAsRead',
+    );
   }
 }

@@ -22,4 +22,4 @@ import { TeamsService } from './teams.service';
   ],
   exports: [TeamsService, TEAM_MEMBERSHIP_READER],
 })
-export class TeamsModule { }
+export class TeamsModule {}

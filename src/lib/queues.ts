@@ -1,4 +1,9 @@
-import { Inject, Module, OnApplicationShutdown, Provider } from '@nestjs/common';
+import {
+  Inject,
+  Module,
+  OnApplicationShutdown,
+  Provider,
+} from '@nestjs/common';
 import { Queue } from 'bullmq';
 import type { JobsOptions } from 'bullmq';
 
@@ -41,7 +46,9 @@ export const scrapeQueueProvider: Provider = {
   exports: [scrapeQueueProvider],
 })
 export class QueueModule implements OnApplicationShutdown {
-  constructor(@Inject(SCRAPE_QUEUE) private readonly scrapeQueue: ScrapeQueue) { }
+  constructor(
+    @Inject(SCRAPE_QUEUE) private readonly scrapeQueue: ScrapeQueue,
+  ) {}
 
   async onApplicationShutdown() {
     await this.scrapeQueue.close();

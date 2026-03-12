@@ -118,11 +118,17 @@ export const scrapeJobRecordListSchema = z.array(scrapeJobRecordSchema);
 export type ProductScrapeContext = z.infer<typeof productScrapeContextSchema>;
 export type ScrapeJobRecord = z.infer<typeof scrapeJobRecordSchema>;
 export type ScrapeResultRecord = z.infer<typeof scrapeResultRecordSchema>;
-export type PriceHistoryAggregateRecord = z.infer<typeof priceHistoryAggregateSchema>;
+export type PriceHistoryAggregateRecord = z.infer<
+  typeof priceHistoryAggregateSchema
+>;
 export type ScheduleScrapeBody = z.infer<typeof scheduleScrapeBodySchema>;
 export type ProductHistoryQuery = z.infer<typeof productHistoryQuerySchema>;
 export type ProductHistoryPoint = z.infer<typeof productHistoryPointSchema>;
 export type QueueDispatchResult = z.infer<typeof queueDispatchResultSchema>;
 export type ScheduleScrapeResult = z.infer<typeof scheduleScrapeResultSchema>;
-export type RecordScrapeObservationInput = z.infer<typeof recordScrapeObservationInputSchema>;
-export type RecordScrapeObservationResult = z.infer<typeof recordScrapeObservationResultSchema>;
+export type RecordScrapeObservationInput = z.infer<
+  typeof recordScrapeObservationInputSchema
+>;
+export type RecordScrapeObservationResult = z.infer<
+  typeof recordScrapeObservationResultSchema
+>;

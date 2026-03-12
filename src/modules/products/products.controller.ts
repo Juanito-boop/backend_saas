@@ -1,19 +1,30 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { CurrentUser, type AuthenticatedUser } from '../../lib/auth-session';
-import { createProductBodySchema, type CreateProductBody } from './domain/product.schemas';
+import {
+  createProductBodySchema,
+  type CreateProductBody,
+} from './domain/product.schemas';
 import { ProductsService } from './products.service';
 
 @Controller('api/teams/:teamId/products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) { }
+  constructor(private readonly productsService: ProductsService) {}
 
   @Post()
   async createProduct(
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
-    @Body(new ZodValidationPipe(createProductBodySchema)) body: CreateProductBody,
+    @Body(new ZodValidationPipe(createProductBodySchema))
+    body: CreateProductBody,
   ) {
     return this.productsService.createProduct(user.id, {
       teamId,

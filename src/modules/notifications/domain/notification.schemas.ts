@@ -19,4 +19,6 @@ export const createNotificationInputSchema = z.object({
 });
 
 export type NotificationRecord = z.infer<typeof notificationRecordSchema>;
-export type CreateNotificationInput = z.infer<typeof createNotificationInputSchema>;
+export type CreateNotificationInput = z.infer<
+  typeof createNotificationInputSchema
+>;

@@ -16,7 +16,9 @@ export type UpdateSubscriptionRecordInput = {
 };
 
 export interface SubscriptionsRepository {
-  createSubscription(input: CreateSubscriptionRecordInput): Promise<SubscriptionRecord>;
+  createSubscription(
+    input: CreateSubscriptionRecordInput,
+  ): Promise<SubscriptionRecord>;
   findLatestByTeamId(teamId: string): Promise<SubscriptionRecord | null>;
   updateSubscription(
     subscriptionId: string,

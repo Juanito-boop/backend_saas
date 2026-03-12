@@ -10,7 +10,7 @@ import { subscriptionRecordSchema } from '../domain/subscription.schemas';
 
 @Injectable()
 export class DrizzleSubscriptionsRepository implements SubscriptionsRepository {
-  constructor(private readonly databaseService: DatabaseService) { }
+  constructor(private readonly databaseService: DatabaseService) {}
 
   async createSubscription(input: {
     teamId: string;
@@ -30,7 +30,11 @@ export class DrizzleSubscriptionsRepository implements SubscriptionsRepository {
       })
       .returning();
 
-    return parseSchema(subscriptionRecordSchema, subscription, 'DrizzleSubscriptionsRepository.createSubscription');
+    return parseSchema(
+      subscriptionRecordSchema,
+      subscription,
+      'DrizzleSubscriptionsRepository.createSubscription',
+    );
   }
 
   async findLatestByTeamId(teamId: string): Promise<SubscriptionRecord | null> {
@@ -41,7 +45,11 @@ export class DrizzleSubscriptionsRepository implements SubscriptionsRepository {
       .orderBy(desc(subscriptions.createdAt))
       .limit(1);
 
-    return parseOptionalSchema(subscriptionRecordSchema, subscription, 'DrizzleSubscriptionsRepository.findLatestByTeamId');
+    return parseOptionalSchema(
+      subscriptionRecordSchema,
+      subscription,
+      'DrizzleSubscriptionsRepository.findLatestByTeamId',
+    );
   }
 
   async updateSubscription(
@@ -60,6 +68,10 @@ export class DrizzleSubscriptionsRepository implements SubscriptionsRepository {
       .where(eq(subscriptions.id, subscriptionId))
       .returning();
 
-    return parseSchema(subscriptionRecordSchema, subscription, 'DrizzleSubscriptionsRepository.updateSubscription');
+    return parseSchema(
+      subscriptionRecordSchema,
+      subscription,
+      'DrizzleSubscriptionsRepository.updateSubscription',
+    );
   }
 }

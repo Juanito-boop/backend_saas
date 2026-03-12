@@ -19,4 +19,4 @@ import { SubscriptionsService } from './subscriptions.service';
     },
   ],
 })
-export class SubscriptionsModule { }
+export class SubscriptionsModule {}

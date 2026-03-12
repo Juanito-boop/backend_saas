@@ -10,7 +10,12 @@ export type CreateNotificationRecordInput = {
 };
 
 export interface NotificationsRepository {
-  createNotification(input: CreateNotificationRecordInput): Promise<NotificationRecord>;
+  createNotification(
+    input: CreateNotificationRecordInput,
+  ): Promise<NotificationRecord>;
   listNotificationsForUser(userId: string): Promise<NotificationRecord[]>;
-  markAsRead(userId: string, notificationId: string): Promise<NotificationRecord | null>;
+  markAsRead(
+    userId: string,
+    notificationId: string,
+  ): Promise<NotificationRecord | null>;
 }

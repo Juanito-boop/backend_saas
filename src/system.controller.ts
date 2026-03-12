@@ -6,7 +6,7 @@ import { SystemService } from './system.service';
 
 @Controller('api')
 export class SystemController {
-  constructor(private readonly systemService: SystemService) { }
+  constructor(private readonly systemService: SystemService) {}
 
   @Public()
   @Get('health/live')

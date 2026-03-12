@@ -5,7 +5,10 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../../common/errors/application-error';
-import { TEAM_MEMBERSHIP_READER, type TeamMembershipReader } from '../../teams/application/team-membership-reader';
+import {
+  TEAM_MEMBERSHIP_READER,
+  type TeamMembershipReader,
+} from '../../teams/application/team-membership-reader';
 import {
   SCRAPE_JOB_DISPATCHER,
   type ScrapeJobDispatcher,
@@ -38,18 +41,30 @@ export class ScrapingService {
     private readonly scrapeJobDispatcher: ScrapeJobDispatcher,
     @Inject(TEAM_MEMBERSHIP_READER)
     private readonly teamMembershipReader: TeamMembershipReader,
-  ) { }
+  ) {}
 
-  async scheduleScrape(actorUserId: string, input: ScheduleScrapeInput): Promise<ScheduleScrapeResult> {
-    const product = await this.scrapingRepository.findProductContext(input.productId);
+  async scheduleScrape(
+    actorUserId: string,
+    input: ScheduleScrapeInput,
+  ): Promise<ScheduleScrapeResult> {
+    const product = await this.scrapingRepository.findProductContext(
+      input.productId,
+    );
 
     if (!product) {
       throw new NotFoundError('Product not found');
     }
 
-    const productContext = parseSchema(productScrapeContextSchema, product, 'ScrapingService.scheduleScrape.productContext');
+    const productContext = parseSchema(
+      productScrapeContextSchema,
+      product,
+      'ScrapingService.scheduleScrape.productContext',
+    );
 
-    await this.teamMembershipReader.getMembershipOrThrow(productContext.teamId, actorUserId);
+    await this.teamMembershipReader.getMembershipOrThrow(
+      productContext.teamId,
+      actorUserId,
+    );
 
     if (productContext.domainId !== input.domainId) {
       throw new ValidationError('domainId does not match the product domain');
@@ -67,32 +82,50 @@ export class ScrapingService {
       domainId: scrapeJob.domainId,
     });
 
-    return parseSchema(scheduleScrapeResultSchema, {
-      jobId: queueJob.queueJobId,
-      queue: queueJob.queueName,
-      name: queueJob.queueJobName,
-      status: 'queued',
-      data: {
-        scrapeJobId: scrapeJob.id,
-        productId: scrapeJob.productId,
-        domainId: scrapeJob.domainId,
+    return parseSchema(
+      scheduleScrapeResultSchema,
+      {
+        jobId: queueJob.queueJobId,
+        queue: queueJob.queueName,
+        name: queueJob.queueJobName,
+        status: 'queued',
+        data: {
+          scrapeJobId: scrapeJob.id,
+          productId: scrapeJob.productId,
+          domainId: scrapeJob.domainId,
+        },
       },
-    }, 'ScrapingService.scheduleScrape');
+      'ScrapingService.scheduleScrape',
+    );
   }
 
-  async listProductJobs(actorUserId: string, productId: string): Promise<ScrapeJobRecord[]> {
+  async listProductJobs(
+    actorUserId: string,
+    productId: string,
+  ): Promise<ScrapeJobRecord[]> {
     const product = await this.scrapingRepository.findProductContext(productId);
 
     if (!product) {
       throw new NotFoundError('Product not found');
     }
 
-    const productContext = parseSchema(productScrapeContextSchema, product, 'ScrapingService.listProductJobs.productContext');
+    const productContext = parseSchema(
+      productScrapeContextSchema,
+      product,
+      'ScrapingService.listProductJobs.productContext',
+    );
 
-    await this.teamMembershipReader.getMembershipOrThrow(productContext.teamId, actorUserId);
+    await this.teamMembershipReader.getMembershipOrThrow(
+      productContext.teamId,
+      actorUserId,
+    );
 
     const jobs = await this.scrapingRepository.listJobsForProduct(productId);
-    return parseSchema(scrapeJobRecordListSchema, jobs, 'ScrapingService.listProductJobs');
+    return parseSchema(
+      scrapeJobRecordListSchema,
+      jobs,
+      'ScrapingService.listProductJobs',
+    );
   }
 
   async listProductHistory(
@@ -106,9 +139,16 @@ export class ScrapingService {
       throw new NotFoundError('Product not found');
     }
 
-    const productContext = parseSchema(productScrapeContextSchema, product, 'ScrapingService.listProductHistory.productContext');
+    const productContext = parseSchema(
+      productScrapeContextSchema,
+      product,
+      'ScrapingService.listProductHistory.productContext',
+    );
 
-    await this.teamMembershipReader.getMembershipOrThrow(productContext.teamId, actorUserId);
+    await this.teamMembershipReader.getMembershipOrThrow(
+      productContext.teamId,
+      actorUserId,
+    );
 
     return this.scrapingRepository.listProductHistory(productId, query);
   }

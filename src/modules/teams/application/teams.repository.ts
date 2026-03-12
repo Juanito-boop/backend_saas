@@ -21,12 +21,23 @@ export interface TeamsRepository {
   createTeam(input: CreateTeamRecordInput): Promise<TeamRecord>;
   deleteTeam(teamId: string): Promise<void>;
   findTeamById(teamId: string): Promise<TeamRecord | null>;
-  createMembership(teamId: string, userId: string, role: TeamMembership['role']): Promise<TeamMembership>;
-  findMembership(teamId: string, userId: string): Promise<TeamMembership | null>;
+  createMembership(
+    teamId: string,
+    userId: string,
+    role: TeamMembership['role'],
+  ): Promise<TeamMembership>;
+  findMembership(
+    teamId: string,
+    userId: string,
+  ): Promise<TeamMembership | null>;
   countMembers(teamId: string): Promise<number>;
   findUserByEmail(email: string): Promise<TeamUser | null>;
   listTeamsForUser(userId: string): Promise<TeamSummary[]>;
   listMembers(teamId: string): Promise<TeamMemberSummary[]>;
   removeMembership(teamId: string, userId: string): Promise<void>;
-  updateMembershipRole(teamId: string, userId: string, role: ManageableTeamRole): Promise<TeamMembership>;
+  updateMembershipRole(
+    teamId: string,
+    userId: string,
+    role: ManageableTeamRole,
+  ): Promise<TeamMembership>;
 }

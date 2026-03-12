@@ -6,11 +6,14 @@ import { DatabaseService } from '../../../db/database.service';
 import { products } from '../../../db/schema';
 import type { ProductsRepository } from '../application/products.repository';
 import type { ProductRecord } from '../domain/product.types';
-import { productRecordListSchema, productRecordSchema } from '../domain/product.schemas';
+import {
+  productRecordListSchema,
+  productRecordSchema,
+} from '../domain/product.schemas';
 
 @Injectable()
 export class DrizzleProductsRepository implements ProductsRepository {
-  constructor(private readonly databaseService: DatabaseService) { }
+  constructor(private readonly databaseService: DatabaseService) {}
 
   async createProduct(input: {
     teamId: string;
@@ -40,7 +43,11 @@ export class DrizzleProductsRepository implements ProductsRepository {
       })
       .returning();
 
-    return parseSchema(productRecordSchema, product, 'DrizzleProductsRepository.createProduct');
+    return parseSchema(
+      productRecordSchema,
+      product,
+      'DrizzleProductsRepository.createProduct',
+    );
   }
 
   async listProductsByTeam(teamId: string): Promise<ProductRecord[]> {
@@ -49,7 +56,11 @@ export class DrizzleProductsRepository implements ProductsRepository {
       .from(products)
       .where(eq(products.teamId, teamId));
 
-    return parseSchema(productRecordListSchema, teamProducts, 'DrizzleProductsRepository.listProductsByTeam');
+    return parseSchema(
+      productRecordListSchema,
+      teamProducts,
+      'DrizzleProductsRepository.listProductsByTeam',
+    );
   }
 
   async findProductById(productId: string): Promise<ProductRecord | null> {
@@ -59,6 +70,10 @@ export class DrizzleProductsRepository implements ProductsRepository {
       .where(eq(products.id, productId))
       .limit(1);
 
-    return parseOptionalSchema(productRecordSchema, product, 'DrizzleProductsRepository.findProductById');
+    return parseOptionalSchema(
+      productRecordSchema,
+      product,
+      'DrizzleProductsRepository.findProductById',
+    );
   }
 }

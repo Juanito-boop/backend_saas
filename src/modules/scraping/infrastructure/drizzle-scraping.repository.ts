@@ -3,7 +3,13 @@ import { and, desc, eq, gte, lte } from 'drizzle-orm';
 
 import { parseOptionalSchema, parseSchema } from '../../../common/zod/parse';
 import { DatabaseService } from '../../../db/database.service';
-import { priceHistory, priceHistoryDaily, priceHistoryHourly, products, scrapeJobs } from '../../../db/schema';
+import {
+  priceHistory,
+  priceHistoryDaily,
+  priceHistoryHourly,
+  products,
+  scrapeJobs,
+} from '../../../db/schema';
 import type { ScrapingRepository } from '../application/scraping.repository';
 import type {
   ProductHistoryPoint,
@@ -20,9 +26,11 @@ import {
 
 @Injectable()
 export class DrizzleScrapingRepository implements ScrapingRepository {
-  constructor(private readonly databaseService: DatabaseService) { }
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  async findProductContext(productId: string): Promise<ProductScrapeContext | null> {
+  async findProductContext(
+    productId: string,
+  ): Promise<ProductScrapeContext | null> {
     const [product] = await this.databaseService.db
       .select({
         productId: products.id,
@@ -33,7 +41,11 @@ export class DrizzleScrapingRepository implements ScrapingRepository {
       .where(eq(products.id, productId))
       .limit(1);
 
-    return parseOptionalSchema(productScrapeContextSchema, product, 'DrizzleScrapingRepository.findProductContext');
+    return parseOptionalSchema(
+      productScrapeContextSchema,
+      product,
+      'DrizzleScrapingRepository.findProductContext',
+    );
   }
 
   async createScrapeJob(input: {
@@ -51,7 +63,11 @@ export class DrizzleScrapingRepository implements ScrapingRepository {
       })
       .returning();
 
-    return parseSchema(scrapeJobRecordSchema, scrapeJob, 'DrizzleScrapingRepository.createScrapeJob');
+    return parseSchema(
+      scrapeJobRecordSchema,
+      scrapeJob,
+      'DrizzleScrapingRepository.createScrapeJob',
+    );
   }
 
   async listJobsForProduct(productId: string): Promise<ScrapeJobRecord[]> {
@@ -61,10 +77,17 @@ export class DrizzleScrapingRepository implements ScrapingRepository {
       .where(eq(scrapeJobs.productId, productId))
       .orderBy(desc(scrapeJobs.createdAt));
 
-    return parseSchema(scrapeJobRecordListSchema, productJobs, 'DrizzleScrapingRepository.listJobsForProduct');
+    return parseSchema(
+      scrapeJobRecordListSchema,
+      productJobs,
+      'DrizzleScrapingRepository.listJobsForProduct',
+    );
   }
 
-  async listProductHistory(productId: string, query: ProductHistoryQuery): Promise<ProductHistoryPoint[]> {
+  async listProductHistory(
+    productId: string,
+    query: ProductHistoryQuery,
+  ): Promise<ProductHistoryPoint[]> {
     const filters = [eq(priceHistory.productId, productId)];
 
     if (query.resolution === 'change') {
@@ -87,23 +110,28 @@ export class DrizzleScrapingRepository implements ScrapingRepository {
         .orderBy(desc(priceHistory.checkedAt))
         .limit(query.limit);
 
-      return parseSchema(productHistoryPointListSchema, points.map((point) => ({
-        resolution: 'change' as const,
-        bucketStart: point.checkedAt,
-        bucketEnd: null,
-        sampleCount: 1,
-        successCount: 1,
-        failureCount: 0,
-        price: point.price,
-        firstPrice: point.price,
-        minPrice: point.price,
-        maxPrice: point.price,
-        lastPrice: point.price,
-        currency: point.currency,
-      })), 'DrizzleScrapingRepository.listProductHistory.change');
+      return parseSchema(
+        productHistoryPointListSchema,
+        points.map((point) => ({
+          resolution: 'change' as const,
+          bucketStart: point.checkedAt,
+          bucketEnd: null,
+          sampleCount: 1,
+          successCount: 1,
+          failureCount: 0,
+          price: point.price,
+          firstPrice: point.price,
+          minPrice: point.price,
+          maxPrice: point.price,
+          lastPrice: point.price,
+          currency: point.currency,
+        })),
+        'DrizzleScrapingRepository.listProductHistory.change',
+      );
     }
 
-    const table = query.resolution === 'hour' ? priceHistoryHourly : priceHistoryDaily;
+    const table =
+      query.resolution === 'hour' ? priceHistoryHourly : priceHistoryDaily;
     const aggregateFilters = [eq(table.productId, productId)];
 
     if (query.from) {
@@ -121,19 +149,23 @@ export class DrizzleScrapingRepository implements ScrapingRepository {
       .orderBy(desc(table.bucketStart))
       .limit(query.limit);
 
-    return parseSchema(productHistoryPointListSchema, points.map((point) => ({
-      resolution: query.resolution,
-      bucketStart: point.bucketStart,
-      bucketEnd: null,
-      sampleCount: point.sampleCount,
-      successCount: point.successCount,
-      failureCount: point.failureCount,
-      price: point.lastPrice,
-      firstPrice: point.firstPrice,
-      minPrice: point.minPrice,
-      maxPrice: point.maxPrice,
-      lastPrice: point.lastPrice,
-      currency: point.currency,
-    })), `DrizzleScrapingRepository.listProductHistory.${query.resolution}`);
+    return parseSchema(
+      productHistoryPointListSchema,
+      points.map((point) => ({
+        resolution: query.resolution,
+        bucketStart: point.bucketStart,
+        bucketEnd: null,
+        sampleCount: point.sampleCount,
+        successCount: point.successCount,
+        failureCount: point.failureCount,
+        price: point.lastPrice,
+        firstPrice: point.firstPrice,
+        minPrice: point.minPrice,
+        maxPrice: point.maxPrice,
+        lastPrice: point.lastPrice,
+        currency: point.currency,
+      })),
+      `DrizzleScrapingRepository.listProductHistory.${query.resolution}`,
+    );
   }
 }

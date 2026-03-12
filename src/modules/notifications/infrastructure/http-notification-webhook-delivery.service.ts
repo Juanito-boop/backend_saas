@@ -7,7 +7,10 @@ import {
   type DispatchWebhookResult,
   type NotificationWebhookPayload,
 } from '../domain/notification-webhook.schemas';
-import { NOTIFICATION_WEBHOOKS_REPOSITORY, type NotificationWebhooksRepository } from '../application/notification-webhooks.repository';
+import {
+  NOTIFICATION_WEBHOOKS_REPOSITORY,
+  type NotificationWebhooksRepository,
+} from '../application/notification-webhooks.repository';
 import type { NotificationWebhookDeliveryService } from '../application/notification-webhooks-delivery.service';
 import type { NotificationRecord } from '../domain/notification.schemas';
 
@@ -16,7 +19,7 @@ export class HttpNotificationWebhookDeliveryService implements NotificationWebho
   constructor(
     @Inject(NOTIFICATION_WEBHOOKS_REPOSITORY)
     private readonly notificationWebhooksRepository: NotificationWebhooksRepository,
-  ) { }
+  ) {}
 
   async dispatchToWebhook(input: {
     webhook: DispatchWebhookResult['webhook'];
@@ -28,22 +31,29 @@ export class HttpNotificationWebhookDeliveryService implements NotificationWebho
     notification?: NotificationRecord;
   }): Promise<DispatchWebhookResult> {
     const sentAt = new Date();
-    const canonicalPayload = parseSchema(notificationWebhookPayloadSchema, {
-      eventType: input.eventType,
-      sentAt: sentAt.toISOString(),
-      teamId: input.teamId,
-      notification: input.notification ?? null,
-      webhook: {
-        id: input.webhook.id,
-        provider: input.webhook.provider,
-        name: input.webhook.name,
+    const canonicalPayload = parseSchema(
+      notificationWebhookPayloadSchema,
+      {
+        eventType: input.eventType,
+        sentAt: sentAt.toISOString(),
+        teamId: input.teamId,
+        notification: input.notification ?? null,
+        webhook: {
+          id: input.webhook.id,
+          provider: input.webhook.provider,
+          name: input.webhook.name,
+        },
+        title: input.title,
+        message: input.message,
+        metadata: input.metadata,
       },
-      title: input.title,
-      message: input.message,
-      metadata: input.metadata,
-    }, 'HttpNotificationWebhookDeliveryService.payload');
+      'HttpNotificationWebhookDeliveryService.payload',
+    );
 
-    const providerPayload = this.toProviderPayload(input.webhook.provider, canonicalPayload);
+    const providerPayload = this.toProviderPayload(
+      input.webhook.provider,
+      canonicalPayload,
+    );
     let success = false;
     let statusCode: number | undefined;
     let responseBody: string | undefined;
@@ -62,9 +72,14 @@ export class HttpNotificationWebhookDeliveryService implements NotificationWebho
       statusCode = response.status;
       responseBody = await response.text();
       success = response.ok;
-      errorMessage = response.ok ? undefined : `Webhook request failed with status ${response.status}`;
+      errorMessage = response.ok
+        ? undefined
+        : `Webhook request failed with status ${response.status}`;
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : 'Unknown webhook delivery error';
+      errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Unknown webhook delivery error';
     }
 
     const delivery = await this.notificationWebhooksRepository.recordDelivery({
@@ -80,18 +95,31 @@ export class HttpNotificationWebhookDeliveryService implements NotificationWebho
     });
 
     if (success) {
-      await this.notificationWebhooksRepository.markSuccess(input.webhook.id, sentAt);
+      await this.notificationWebhooksRepository.markSuccess(
+        input.webhook.id,
+        sentAt,
+      );
     } else {
-      await this.notificationWebhooksRepository.markFailure(input.webhook.id, errorMessage ?? 'Unknown delivery error');
+      await this.notificationWebhooksRepository.markFailure(
+        input.webhook.id,
+        errorMessage ?? 'Unknown delivery error',
+      );
     }
 
-    return parseSchema(dispatchWebhookResultSchema, {
-      webhook: input.webhook,
-      delivery,
-    }, 'HttpNotificationWebhookDeliveryService.dispatchToWebhook');
+    return parseSchema(
+      dispatchWebhookResultSchema,
+      {
+        webhook: input.webhook,
+        delivery,
+      },
+      'HttpNotificationWebhookDeliveryService.dispatchToWebhook',
+    );
   }
 
-  private toProviderPayload(provider: DispatchWebhookResult['webhook']['provider'], payload: NotificationWebhookPayload) {
+  private toProviderPayload(
+    provider: DispatchWebhookResult['webhook']['provider'],
+    payload: NotificationWebhookPayload,
+  ) {
     if (provider === 'slack') {
       return {
         text: `*${payload.title}*\n${payload.message}`,

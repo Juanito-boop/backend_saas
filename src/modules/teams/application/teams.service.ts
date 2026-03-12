@@ -34,10 +34,7 @@ import {
   teamSummaryListSchema,
 } from '../domain/team.schemas';
 import { type TeamMembershipReader } from './team-membership-reader';
-import {
-  TEAMS_REPOSITORY,
-  type TeamsRepository,
-} from './teams.repository';
+import { TEAMS_REPOSITORY, type TeamsRepository } from './teams.repository';
 
 export type CreateTeamInput = CreateTeamBody;
 
@@ -60,9 +57,12 @@ export class TeamsService implements TeamMembershipReader {
   constructor(
     @Inject(TEAMS_REPOSITORY)
     private readonly teamsRepository: TeamsRepository,
-  ) { }
+  ) {}
 
-  async createTeam(ownerId: string, input: CreateTeamInput): Promise<TeamRecord> {
+  async createTeam(
+    ownerId: string,
+    input: CreateTeamInput,
+  ): Promise<TeamRecord> {
     const name = normalizeTeamName(input.name);
     validateTeamLimits(input);
 
@@ -75,7 +75,11 @@ export class TeamsService implements TeamMembershipReader {
     });
 
     try {
-      await this.teamsRepository.createMembership(createdTeam.id, ownerId, 'owner');
+      await this.teamsRepository.createMembership(
+        createdTeam.id,
+        ownerId,
+        'owner',
+      );
     } catch (error) {
       await this.teamsRepository.deleteTeam(createdTeam.id);
 
@@ -84,11 +88,21 @@ export class TeamsService implements TeamMembershipReader {
       });
     }
 
-    return parseSchema(teamRecordSchema, createdTeam, 'TeamsService.createTeam');
+    return parseSchema(
+      teamRecordSchema,
+      createdTeam,
+      'TeamsService.createTeam',
+    );
   }
 
-  async inviteUser(actorUserId: string, input: InviteUserInput): Promise<InvitedTeamMember> {
-    const membership = await this.getMembershipOrThrow(input.teamId, actorUserId);
+  async inviteUser(
+    actorUserId: string,
+    input: InviteUserInput,
+  ): Promise<InvitedTeamMember> {
+    const membership = await this.getMembershipOrThrow(
+      input.teamId,
+      actorUserId,
+    );
     assertCanManageMembers(membership.role);
 
     const normalizedEmail = normalizeUserEmail(input.userEmail);
@@ -101,7 +115,9 @@ export class TeamsService implements TeamMembershipReader {
     );
 
     const team = await this.getTeamOrThrow(input.teamId);
-    const currentMembers = await this.teamsRepository.countMembers(input.teamId);
+    const currentMembers = await this.teamsRepository.countMembers(
+      input.teamId,
+    );
     assertWithinTeamUserLimit(currentMembers, team.userLimit);
 
     const newMembership = await this.teamsRepository.createMembership(
@@ -110,40 +126,80 @@ export class TeamsService implements TeamMembershipReader {
       'member',
     );
 
-    return parseSchema(invitedTeamMemberSchema, {
-      ...newMembership,
-      user: targetUser,
-    }, 'TeamsService.inviteUser');
+    return parseSchema(
+      invitedTeamMemberSchema,
+      {
+        ...newMembership,
+        user: targetUser,
+      },
+      'TeamsService.inviteUser',
+    );
   }
 
   async listTeamsForUser(userId: string): Promise<TeamSummary[]> {
     const teams = await this.teamsRepository.listTeamsForUser(userId);
-    return parseSchema(teamSummaryListSchema, teams, 'TeamsService.listTeamsForUser');
+    return parseSchema(
+      teamSummaryListSchema,
+      teams,
+      'TeamsService.listTeamsForUser',
+    );
   }
 
-  async listMembers(actorUserId: string, teamId: string): Promise<TeamMemberSummary[]> {
+  async listMembers(
+    actorUserId: string,
+    teamId: string,
+  ): Promise<TeamMemberSummary[]> {
     await this.getMembershipOrThrow(teamId, actorUserId);
     const members = await this.teamsRepository.listMembers(teamId);
-    return parseSchema(teamMemberSummaryListSchema, members, 'TeamsService.listMembers');
+    return parseSchema(
+      teamMemberSummaryListSchema,
+      members,
+      'TeamsService.listMembers',
+    );
   }
 
-  async removeMember(actorUserId: string, input: RemoveMemberInput): Promise<RemoveMemberResult> {
-    const actorMembership = await this.getMembershipOrThrow(input.teamId, actorUserId);
+  async removeMember(
+    actorUserId: string,
+    input: RemoveMemberInput,
+  ): Promise<RemoveMemberResult> {
+    const actorMembership = await this.getMembershipOrThrow(
+      input.teamId,
+      actorUserId,
+    );
     assertCanManageMembers(actorMembership.role);
 
-    const targetMembership = await this.getMembershipOrThrow(input.teamId, input.memberUserId);
+    const targetMembership = await this.getMembershipOrThrow(
+      input.teamId,
+      input.memberUserId,
+    );
     assertMemberCanBeRemovedOrChanged(targetMembership);
 
-    await this.teamsRepository.removeMembership(input.teamId, input.memberUserId);
+    await this.teamsRepository.removeMembership(
+      input.teamId,
+      input.memberUserId,
+    );
 
-    return parseSchema(removeMemberResultSchema, { success: true }, 'TeamsService.removeMember');
+    return parseSchema(
+      removeMemberResultSchema,
+      { success: true },
+      'TeamsService.removeMember',
+    );
   }
 
-  async updateMemberRole(actorUserId: string, input: UpdateMemberRoleInput): Promise<TeamMembership> {
-    const actorMembership = await this.getMembershipOrThrow(input.teamId, actorUserId);
+  async updateMemberRole(
+    actorUserId: string,
+    input: UpdateMemberRoleInput,
+  ): Promise<TeamMembership> {
+    const actorMembership = await this.getMembershipOrThrow(
+      input.teamId,
+      actorUserId,
+    );
     assertCanManageMembers(actorMembership.role);
 
-    const targetMembership = await this.getMembershipOrThrow(input.teamId, input.memberUserId);
+    const targetMembership = await this.getMembershipOrThrow(
+      input.teamId,
+      input.memberUserId,
+    );
     assertMemberCanBeRemovedOrChanged(targetMembership);
 
     const updatedMembership = await this.teamsRepository.updateMembershipRole(
@@ -152,19 +208,32 @@ export class TeamsService implements TeamMembershipReader {
       input.role,
     );
 
-    return parseSchema(teamMembershipSchema, updatedMembership, 'TeamsService.updateMemberRole');
+    return parseSchema(
+      teamMembershipSchema,
+      updatedMembership,
+      'TeamsService.updateMemberRole',
+    );
   }
 
-  async getMembershipOrThrow(teamId: string, userId: string): Promise<TeamMembership> {
+  async getMembershipOrThrow(
+    teamId: string,
+    userId: string,
+  ): Promise<TeamMembership> {
     const membership = assertMembershipExists(
       await this.teamsRepository.findMembership(teamId, userId),
     );
 
-    return parseSchema(teamMembershipSchema, membership, 'TeamsService.getMembershipOrThrow');
+    return parseSchema(
+      teamMembershipSchema,
+      membership,
+      'TeamsService.getMembershipOrThrow',
+    );
   }
 
   async getTeamOrThrow(teamId: string): Promise<TeamRecord> {
-    const team = assertTeamExists(await this.teamsRepository.findTeamById(teamId));
+    const team = assertTeamExists(
+      await this.teamsRepository.findTeamById(teamId),
+    );
     return parseSchema(teamRecordSchema, team, 'TeamsService.getTeamOrThrow');
   }
 }

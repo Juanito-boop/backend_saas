@@ -3,7 +3,10 @@ import { and, desc, eq } from 'drizzle-orm';
 
 import { parseOptionalSchema, parseSchema } from '../../../common/zod/parse';
 import { DatabaseService } from '../../../db/database.service';
-import { notificationWebhookDeliveries, notificationWebhooks } from '../../../db/schema';
+import {
+  notificationWebhookDeliveries,
+  notificationWebhooks,
+} from '../../../db/schema';
 import type {
   CreateNotificationWebhookDeliveryRecordInput,
   CreateNotificationWebhookRecordInput,
@@ -20,7 +23,7 @@ import {
 
 @Injectable()
 export class DrizzleNotificationWebhooksRepository implements NotificationWebhooksRepository {
-  constructor(private readonly databaseService: DatabaseService) { }
+  constructor(private readonly databaseService: DatabaseService) {}
 
   async listForTeam(teamId: string): Promise<NotificationWebhookRecord[]> {
     const webhooks = await this.databaseService.db
@@ -29,30 +32,59 @@ export class DrizzleNotificationWebhooksRepository implements NotificationWebhoo
       .where(eq(notificationWebhooks.teamId, teamId))
       .orderBy(desc(notificationWebhooks.createdAt));
 
-    return parseSchema(notificationWebhookRecordListSchema, webhooks.map(this.normalizeWebhookRecord), 'DrizzleNotificationWebhooksRepository.listForTeam');
+    return parseSchema(
+      notificationWebhookRecordListSchema,
+      webhooks.map((webhook) => this.normalizeWebhookRecord(webhook)),
+      'DrizzleNotificationWebhooksRepository.listForTeam',
+    );
   }
 
-  async listActiveForTeam(teamId: string): Promise<NotificationWebhookRecord[]> {
+  async listActiveForTeam(
+    teamId: string,
+  ): Promise<NotificationWebhookRecord[]> {
     const webhooks = await this.databaseService.db
       .select()
       .from(notificationWebhooks)
-      .where(and(eq(notificationWebhooks.teamId, teamId), eq(notificationWebhooks.enabled, true)))
+      .where(
+        and(
+          eq(notificationWebhooks.teamId, teamId),
+          eq(notificationWebhooks.enabled, true),
+        ),
+      )
       .orderBy(desc(notificationWebhooks.createdAt));
 
-    return parseSchema(notificationWebhookRecordListSchema, webhooks.map(this.normalizeWebhookRecord), 'DrizzleNotificationWebhooksRepository.listActiveForTeam');
+    return parseSchema(
+      notificationWebhookRecordListSchema,
+      webhooks.map((webhook) => this.normalizeWebhookRecord(webhook)),
+      'DrizzleNotificationWebhooksRepository.listActiveForTeam',
+    );
   }
 
-  async findById(teamId: string, webhookId: string): Promise<NotificationWebhookRecord | null> {
+  async findById(
+    teamId: string,
+    webhookId: string,
+  ): Promise<NotificationWebhookRecord | null> {
     const [webhook] = await this.databaseService.db
       .select()
       .from(notificationWebhooks)
-      .where(and(eq(notificationWebhooks.id, webhookId), eq(notificationWebhooks.teamId, teamId)))
+      .where(
+        and(
+          eq(notificationWebhooks.id, webhookId),
+          eq(notificationWebhooks.teamId, teamId),
+        ),
+      )
       .limit(1);
 
-    return parseOptionalSchema(notificationWebhookRecordSchema, webhook ? this.normalizeWebhookRecord(webhook) : null, 'DrizzleNotificationWebhooksRepository.findById');
+    return parseOptionalSchema(
+      notificationWebhookRecordSchema,
+      webhook ? this.normalizeWebhookRecord(webhook) : null,
+      'DrizzleNotificationWebhooksRepository.findById',
+    );
   }
 
-  async create(input: CreateNotificationWebhookRecordInput): Promise<NotificationWebhookRecord> {
+  async create(
+    input: CreateNotificationWebhookRecordInput,
+  ): Promise<NotificationWebhookRecord> {
     const [webhook] = await this.databaseService.db
       .insert(notificationWebhooks)
       .values({
@@ -66,7 +98,11 @@ export class DrizzleNotificationWebhooksRepository implements NotificationWebhoo
       })
       .returning();
 
-    return parseSchema(notificationWebhookRecordSchema, this.normalizeWebhookRecord(webhook), 'DrizzleNotificationWebhooksRepository.create');
+    return parseSchema(
+      notificationWebhookRecordSchema,
+      this.normalizeWebhookRecord(webhook),
+      'DrizzleNotificationWebhooksRepository.create',
+    );
   }
 
   async update(
@@ -83,19 +119,35 @@ export class DrizzleNotificationWebhooksRepository implements NotificationWebhoo
         enabled: input.enabled,
         updatedAt: new Date(),
       })
-      .where(and(eq(notificationWebhooks.id, webhookId), eq(notificationWebhooks.teamId, teamId)))
+      .where(
+        and(
+          eq(notificationWebhooks.id, webhookId),
+          eq(notificationWebhooks.teamId, teamId),
+        ),
+      )
       .returning();
 
-    return parseOptionalSchema(notificationWebhookRecordSchema, webhook ? this.normalizeWebhookRecord(webhook) : null, 'DrizzleNotificationWebhooksRepository.update');
+    return parseOptionalSchema(
+      notificationWebhookRecordSchema,
+      webhook ? this.normalizeWebhookRecord(webhook) : null,
+      'DrizzleNotificationWebhooksRepository.update',
+    );
   }
 
   async delete(teamId: string, webhookId: string) {
     await this.databaseService.db
       .delete(notificationWebhooks)
-      .where(and(eq(notificationWebhooks.id, webhookId), eq(notificationWebhooks.teamId, teamId)));
+      .where(
+        and(
+          eq(notificationWebhooks.id, webhookId),
+          eq(notificationWebhooks.teamId, teamId),
+        ),
+      );
   }
 
-  async recordDelivery(input: CreateNotificationWebhookDeliveryRecordInput): Promise<NotificationWebhookDeliveryRecord> {
+  async recordDelivery(
+    input: CreateNotificationWebhookDeliveryRecordInput,
+  ): Promise<NotificationWebhookDeliveryRecord> {
     const [delivery] = await this.databaseService.db
       .insert(notificationWebhookDeliveries)
       .values({
@@ -111,7 +163,11 @@ export class DrizzleNotificationWebhooksRepository implements NotificationWebhoo
       })
       .returning();
 
-    return parseSchema(notificationWebhookDeliveryRecordSchema, delivery, 'DrizzleNotificationWebhooksRepository.recordDelivery');
+    return parseSchema(
+      notificationWebhookDeliveryRecordSchema,
+      delivery,
+      'DrizzleNotificationWebhooksRepository.recordDelivery',
+    );
   }
 
   async markSuccess(webhookId: string, deliveredAt: Date) {
@@ -135,7 +191,9 @@ export class DrizzleNotificationWebhooksRepository implements NotificationWebhoo
       .where(eq(notificationWebhooks.id, webhookId));
   }
 
-  private normalizeWebhookRecord(record: typeof notificationWebhooks.$inferSelect) {
+  private normalizeWebhookRecord(
+    record: typeof notificationWebhooks.$inferSelect,
+  ) {
     return {
       ...record,
       eventTypes: Array.isArray(record.eventTypes) ? record.eventTypes : null,

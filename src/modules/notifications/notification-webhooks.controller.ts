@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { CurrentUser, type AuthenticatedUser } from '../../lib/auth-session';
@@ -12,7 +21,9 @@ import { NotificationWebhooksService } from './notification-webhooks.service';
 
 @Controller('api/teams/:teamId/notification-webhooks')
 export class NotificationWebhooksController {
-  constructor(private readonly notificationWebhooksService: NotificationWebhooksService) { }
+  constructor(
+    private readonly notificationWebhooksService: NotificationWebhooksService,
+  ) {}
 
   @Get()
   async listWebhooks(
@@ -26,9 +37,14 @@ export class NotificationWebhooksController {
   async createWebhook(
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
-    @Body(new ZodValidationPipe(createNotificationWebhookBodySchema)) body: CreateNotificationWebhookBody,
+    @Body(new ZodValidationPipe(createNotificationWebhookBodySchema))
+    body: CreateNotificationWebhookBody,
   ) {
-    return this.notificationWebhooksService.createWebhook(user.id, teamId, body);
+    return this.notificationWebhooksService.createWebhook(
+      user.id,
+      teamId,
+      body,
+    );
   }
 
   @Patch(':webhookId')
@@ -36,9 +52,15 @@ export class NotificationWebhooksController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
     @Param('webhookId', new ParseUUIDPipe()) webhookId: string,
-    @Body(new ZodValidationPipe(updateNotificationWebhookBodySchema)) body: UpdateNotificationWebhookBody,
+    @Body(new ZodValidationPipe(updateNotificationWebhookBodySchema))
+    body: UpdateNotificationWebhookBody,
   ) {
-    return this.notificationWebhooksService.updateWebhook(user.id, teamId, webhookId, body);
+    return this.notificationWebhooksService.updateWebhook(
+      user.id,
+      teamId,
+      webhookId,
+      body,
+    );
   }
 
   @Delete(':webhookId')
@@ -47,7 +69,11 @@ export class NotificationWebhooksController {
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
     @Param('webhookId', new ParseUUIDPipe()) webhookId: string,
   ) {
-    return this.notificationWebhooksService.deleteWebhook(user.id, teamId, webhookId);
+    return this.notificationWebhooksService.deleteWebhook(
+      user.id,
+      teamId,
+      webhookId,
+    );
   }
 
   @Post(':webhookId/test')
@@ -56,6 +82,10 @@ export class NotificationWebhooksController {
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
     @Param('webhookId', new ParseUUIDPipe()) webhookId: string,
   ) {
-    return this.notificationWebhooksService.sendTest(user.id, teamId, webhookId);
+    return this.notificationWebhooksService.sendTest(
+      user.id,
+      teamId,
+      webhookId,
+    );
   }
 }

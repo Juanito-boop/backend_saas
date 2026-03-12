@@ -12,9 +12,11 @@ type SendEmailInput = {
 let cachedTransporter: Transporter | null = null;
 
 function getFrontendUrl() {
-  return process.env.FRONTEND_URL
-    ?? process.env.BETTER_AUTH_URL
-    ?? `http://localhost:${process.env.PORT ?? '3000'}`;
+  return (
+    process.env.FRONTEND_URL ??
+    process.env.BETTER_AUTH_URL ??
+    `http://localhost:${process.env.PORT ?? '3000'}`
+  );
 }
 
 function getSmtpConfig() {
@@ -38,7 +40,9 @@ function getSmtpConfig() {
 function hasSmtpConfig() {
   const config = getSmtpConfig();
 
-  return Boolean(config.host && config.port && config.user && config.pass && config.from);
+  return Boolean(
+    config.host && config.port && config.user && config.pass && config.from,
+  );
 }
 
 function getTransporter() {
@@ -93,7 +97,10 @@ export async function sendEmail(input: SendEmailInput) {
   });
 }
 
-export async function sendVerificationEmailMessage(input: { email: string; url: string }) {
+export async function sendVerificationEmailMessage(input: {
+  email: string;
+  url: string;
+}) {
   const verificationUrl = normalizeVerificationUrl(input.url);
 
   await sendEmail({

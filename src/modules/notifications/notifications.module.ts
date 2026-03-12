@@ -36,4 +36,4 @@ import { NotificationsService } from './notifications.service';
   ],
   exports: [NotificationsService, NotificationWebhooksService],
 })
-export class NotificationsModule { }
+export class NotificationsModule {}

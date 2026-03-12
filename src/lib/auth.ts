@@ -7,12 +7,14 @@ import { db } from '../db/database';
 import { authSchema } from '../db/schema';
 import { sendVerificationEmailMessage } from './email';
 
-const baseURL = process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? '3000'}`;
+const baseURL =
+  process.env.BETTER_AUTH_URL ??
+  `http://localhost:${process.env.PORT ?? '3000'}`;
 const trustedOrigins = (
-  process.env.BETTER_AUTH_TRUSTED_ORIGINS
-  ?? process.env.CORS_ORIGINS
-  ?? process.env.FRONTEND_URL
-  ?? ''
+  process.env.BETTER_AUTH_TRUSTED_ORIGINS ??
+  process.env.CORS_ORIGINS ??
+  process.env.FRONTEND_URL ??
+  ''
 )
   .split(',')
   .map((origin) => origin.trim())
@@ -24,22 +26,23 @@ const originCheckExemptPaths = (
   .split(',')
   .map((path) => path.trim())
   .filter((path) => path.length > 0);
-const disableOriginCheck = process.env.BETTER_AUTH_DISABLE_ORIGIN_CHECK === 'true'
-  ? true
-  : originCheckExemptPaths;
+const disableOriginCheck =
+  process.env.BETTER_AUTH_DISABLE_ORIGIN_CHECK === 'true'
+    ? true
+    : originCheckExemptPaths;
 
 export const auth = betterAuth({
   baseURL,
   trustedOrigins,
   database: drizzleAdapter(db, {
     provider: 'pg',
-    schema: authSchema
+    schema: authSchema,
   }),
   advanced: {
     disableOriginCheck: disableOriginCheck as boolean,
     database: {
-      generateId: 'uuid'
-    }
+      generateId: 'uuid',
+    },
   },
   secret: process.env.BETTER_AUTH_SECRET,
   emailVerification: {
@@ -57,5 +60,5 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-  }
+  },
 });

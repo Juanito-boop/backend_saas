@@ -21,7 +21,10 @@ export function getBullMqConnection(): ConnectionOptions {
     port: parsedRedisUrl.port ? Number(parsedRedisUrl.port) : 6379,
     username: parsedRedisUrl.username || undefined,
     password: parsedRedisUrl.password || undefined,
-    db: parsedRedisUrl.pathname.length > 1 ? Number(parsedRedisUrl.pathname.slice(1)) : undefined,
+    db:
+      parsedRedisUrl.pathname.length > 1
+        ? Number(parsedRedisUrl.pathname.slice(1))
+        : undefined,
     tls: parsedRedisUrl.protocol === 'rediss:' ? {} : undefined,
     maxRetriesPerRequest: null,
     enableReadyCheck: false,

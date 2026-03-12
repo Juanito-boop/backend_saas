@@ -15,7 +15,9 @@ import { queueDispatchResultSchema } from '../domain/scraping.schemas';
 
 @Injectable()
 export class BullMqScrapeJobDispatcher implements ScrapeJobDispatcher {
-  constructor(@Inject(SCRAPE_QUEUE) private readonly scrapeQueue: ScrapeQueue) { }
+  constructor(
+    @Inject(SCRAPE_QUEUE) private readonly scrapeQueue: ScrapeQueue,
+  ) {}
 
   async dispatch(input: ScheduleScrapeJobInput) {
     const job = await this.scrapeQueue.add(SCRAPE_JOB_NAME, {
@@ -24,10 +26,14 @@ export class BullMqScrapeJobDispatcher implements ScrapeJobDispatcher {
       domainId: input.domainId,
     });
 
-    return parseSchema(queueDispatchResultSchema, {
-      queueJobId: job.id,
-      queueName: SCRAPE_QUEUE_NAME,
-      queueJobName: job.name,
-    }, 'BullMqScrapeJobDispatcher.dispatch');
+    return parseSchema(
+      queueDispatchResultSchema,
+      {
+        queueJobId: job.id,
+        queueName: SCRAPE_QUEUE_NAME,
+        queueJobName: job.name,
+      },
+      'BullMqScrapeJobDispatcher.dispatch',
+    );
   }
 }

@@ -7,7 +7,10 @@ import {
 } from '../../../common/errors/application-error';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { assertOwnerRole } from '../../teams/domain/team-policies';
-import { TEAM_MEMBERSHIP_READER, type TeamMembershipReader } from '../../teams/application/team-membership-reader';
+import {
+  TEAM_MEMBERSHIP_READER,
+  type TeamMembershipReader,
+} from '../../teams/application/team-membership-reader';
 import { TeamsService } from '../../teams/teams.service';
 import {
   SUBSCRIPTIONS_REPOSITORY,
@@ -46,48 +49,75 @@ export class SubscriptionsService {
     private readonly teamMembershipReader: TeamMembershipReader,
     private readonly teamsService: TeamsService,
     private readonly notificationsService: NotificationsService,
-  ) { }
+  ) {}
 
-  async createSubscription(actorUserId: string, input: CreateSubscriptionInput): Promise<SubscriptionRecord> {
+  async createSubscription(
+    actorUserId: string,
+    input: CreateSubscriptionInput,
+  ): Promise<SubscriptionRecord> {
     await this.assertOwner(actorUserId, input.teamId);
 
-    const existingSubscription = await this.subscriptionsRepository.findLatestByTeamId(input.teamId);
+    const existingSubscription =
+      await this.subscriptionsRepository.findLatestByTeamId(input.teamId);
 
     if (existingSubscription) {
       throw new ConflictError('A subscription already exists for this team');
     }
 
-    const subscription = await this.subscriptionsRepository.createSubscription(input);
-    return parseSchema(subscriptionRecordSchema, subscription, 'SubscriptionsService.createSubscription');
+    const subscription =
+      await this.subscriptionsRepository.createSubscription(input);
+    return parseSchema(
+      subscriptionRecordSchema,
+      subscription,
+      'SubscriptionsService.createSubscription',
+    );
   }
 
-  async getSubscription(actorUserId: string, teamId: string): Promise<SubscriptionRecord> {
+  async getSubscription(
+    actorUserId: string,
+    teamId: string,
+  ): Promise<SubscriptionRecord> {
     await this.assertOwner(actorUserId, teamId);
 
-    const subscription = await this.subscriptionsRepository.findLatestByTeamId(teamId);
+    const subscription =
+      await this.subscriptionsRepository.findLatestByTeamId(teamId);
 
     if (!subscription) {
       throw new NotFoundError('Subscription not found');
     }
 
-    return parseSchema(subscriptionRecordSchema, subscription, 'SubscriptionsService.getSubscription');
+    return parseSchema(
+      subscriptionRecordSchema,
+      subscription,
+      'SubscriptionsService.getSubscription',
+    );
   }
 
-  async updateSubscriptionStatus(actorUserId: string, input: UpdateSubscriptionStatusInput): Promise<SubscriptionRecord> {
+  async updateSubscriptionStatus(
+    actorUserId: string,
+    input: UpdateSubscriptionStatusInput,
+  ): Promise<SubscriptionRecord> {
     await this.assertOwner(actorUserId, input.teamId);
 
-    const subscription = await this.subscriptionsRepository.findLatestByTeamId(input.teamId);
+    const subscription = await this.subscriptionsRepository.findLatestByTeamId(
+      input.teamId,
+    );
 
     if (!subscription) {
       throw new NotFoundError('Subscription not found');
     }
 
-    const updatedSubscription = await this.subscriptionsRepository.updateSubscription(subscription.id, {
-      status: input.status,
-      currentPeriodEnd: input.currentPeriodEnd,
-    });
+    const updatedSubscription =
+      await this.subscriptionsRepository.updateSubscription(subscription.id, {
+        status: input.status,
+        currentPeriodEnd: input.currentPeriodEnd,
+      });
 
-    return parseSchema(subscriptionRecordSchema, updatedSubscription, 'SubscriptionsService.updateSubscriptionStatus');
+    return parseSchema(
+      subscriptionRecordSchema,
+      updatedSubscription,
+      'SubscriptionsService.updateSubscriptionStatus',
+    );
   }
 
   async emitLifecycleEvent(
@@ -98,8 +128,12 @@ export class SubscriptionsService {
     return this.emitLifecycleEventInternal(input);
   }
 
-  async emitLifecycleEventInternal(input: EmitSubscriptionLifecycleEventInput): Promise<SubscriptionLifecycleEventResult> {
-    const subscription = await this.subscriptionsRepository.findLatestByTeamId(input.teamId);
+  async emitLifecycleEventInternal(
+    input: EmitSubscriptionLifecycleEventInput,
+  ): Promise<SubscriptionLifecycleEventResult> {
+    const subscription = await this.subscriptionsRepository.findLatestByTeamId(
+      input.teamId,
+    );
 
     if (!subscription) {
       throw new NotFoundError('Subscription not found');
@@ -107,43 +141,57 @@ export class SubscriptionsService {
 
     const team = await this.teamsService.getTeamOrThrow(input.teamId);
     const nextStatus = this.resolveNextStatus(input, subscription.status);
-    const nextPeriodEnd = input.currentPeriodEnd ?? subscription.currentPeriodEnd ?? undefined;
+    const nextPeriodEnd =
+      input.currentPeriodEnd ?? subscription.currentPeriodEnd ?? undefined;
 
-    const updatedSubscription = await this.subscriptionsRepository.updateSubscription(subscription.id, {
-      status: nextStatus,
-      currentPeriodEnd: nextPeriodEnd,
-    });
+    const updatedSubscription =
+      await this.subscriptionsRepository.updateSubscription(subscription.id, {
+        status: nextStatus,
+        currentPeriodEnd: nextPeriodEnd,
+      });
 
     const content = this.buildNotificationContent(updatedSubscription, input);
-    const notification = await this.notificationsService.createTeamNotification({
-      teamId: input.teamId,
-      userId: team.ownerId,
-      title: content.title,
-      message: content.message,
-      metadata: {
-        subscriptionId: updatedSubscription.id,
-        provider: input.provider ?? updatedSubscription.provider,
-        providerSubscriptionId: input.providerSubscriptionId ?? updatedSubscription.providerSubscriptionId,
-        invoiceId: input.invoiceId,
-        invoiceUrl: input.invoiceUrl,
-        paymentReference: input.paymentReference,
-        amount: input.amount,
-        currency: input.currency,
-        currentPeriodEnd: updatedSubscription.currentPeriodEnd?.toISOString() ?? null,
-        lifecycleEvent: input.eventType,
-        ...input.metadata,
+    const notification = await this.notificationsService.createTeamNotification(
+      {
+        teamId: input.teamId,
+        userId: team.ownerId,
+        title: content.title,
+        message: content.message,
+        metadata: {
+          subscriptionId: updatedSubscription.id,
+          provider: input.provider ?? updatedSubscription.provider,
+          providerSubscriptionId:
+            input.providerSubscriptionId ??
+            updatedSubscription.providerSubscriptionId,
+          invoiceId: input.invoiceId,
+          invoiceUrl: input.invoiceUrl,
+          paymentReference: input.paymentReference,
+          amount: input.amount,
+          currency: input.currency,
+          currentPeriodEnd:
+            updatedSubscription.currentPeriodEnd?.toISOString() ?? null,
+          lifecycleEvent: input.eventType,
+          ...input.metadata,
+        },
       },
-    });
+    );
 
-    return parseSchema(subscriptionLifecycleEventResultSchema, {
-      subscription: updatedSubscription,
-      notificationId: notification.id,
-      title: notification.title,
-      message: notification.message,
-    }, 'SubscriptionsService.emitLifecycleEvent');
+    return parseSchema(
+      subscriptionLifecycleEventResultSchema,
+      {
+        subscription: updatedSubscription,
+        notificationId: notification.id,
+        title: notification.title,
+        message: notification.message,
+      },
+      'SubscriptionsService.emitLifecycleEvent',
+    );
   }
 
-  private resolveNextStatus(input: EmitSubscriptionLifecycleEventInput, currentStatus: string) {
+  private resolveNextStatus(
+    input: EmitSubscriptionLifecycleEventInput,
+    currentStatus: string,
+  ) {
     if (input.status) {
       return input.status;
     }
@@ -159,19 +207,28 @@ export class SubscriptionsService {
     return currentStatus;
   }
 
-  private buildNotificationContent(subscription: SubscriptionRecord, input: EmitSubscriptionLifecycleEventInput) {
+  private buildNotificationContent(
+    subscription: SubscriptionRecord,
+    input: EmitSubscriptionLifecycleEventInput,
+  ) {
     const formattedDate = subscription.currentPeriodEnd
       ? new Intl.DateTimeFormat('en-US', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-        timeZone: 'UTC',
-      }).format(subscription.currentPeriodEnd)
+          dateStyle: 'medium',
+          timeStyle: 'short',
+          timeZone: 'UTC',
+        }).format(subscription.currentPeriodEnd)
       : null;
 
     const providerLabel = input.provider ?? subscription.provider;
-    const invoiceLabel = input.invoiceId ? ` Invoice ${input.invoiceId} is attached in metadata.` : '';
-    const invoiceUrlLabel = input.invoiceUrl ? ' The invoice URL is included in the notification metadata.' : '';
-    const paymentReferenceLabel = input.paymentReference ? ` Payment reference: ${input.paymentReference}.` : '';
+    const invoiceLabel = input.invoiceId
+      ? ` Invoice ${input.invoiceId} is attached in metadata.`
+      : '';
+    const invoiceUrlLabel = input.invoiceUrl
+      ? ' The invoice URL is included in the notification metadata.'
+      : '';
+    const paymentReferenceLabel = input.paymentReference
+      ? ` Payment reference: ${input.paymentReference}.`
+      : '';
 
     if (input.eventType === 'renewed') {
       return {
@@ -200,7 +257,10 @@ export class SubscriptionsService {
   }
 
   private async assertOwner(actorUserId: string, teamId: string) {
-    const membership = await this.teamMembershipReader.getMembershipOrThrow(teamId, actorUserId);
+    const membership = await this.teamMembershipReader.getMembershipOrThrow(
+      teamId,
+      actorUserId,
+    );
     assertOwnerRole(membership);
   }
 }

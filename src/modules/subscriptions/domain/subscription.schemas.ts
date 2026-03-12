@@ -22,7 +22,11 @@ export const updateSubscriptionStatusBodySchema = z.object({
   currentPeriodEnd: z.coerce.date().optional(),
 });
 
-export const subscriptionLifecycleEventTypeSchema = z.enum(['expiring_soon', 'expired', 'renewed']);
+export const subscriptionLifecycleEventTypeSchema = z.enum([
+  'expiring_soon',
+  'expired',
+  'renewed',
+]);
 
 export const subscriptionLifecycleEventBodySchema = z.object({
   eventType: subscriptionLifecycleEventTypeSchema,
@@ -48,8 +52,18 @@ export const subscriptionLifecycleEventResultSchema = z.object({
 export const subscriptionRecordListSchema = z.array(subscriptionRecordSchema);
 
 export type SubscriptionRecord = z.infer<typeof subscriptionRecordSchema>;
-export type CreateSubscriptionBody = z.infer<typeof createSubscriptionBodySchema>;
-export type UpdateSubscriptionStatusBody = z.infer<typeof updateSubscriptionStatusBodySchema>;
-export type SubscriptionLifecycleEventType = z.infer<typeof subscriptionLifecycleEventTypeSchema>;
-export type SubscriptionLifecycleEventBody = z.infer<typeof subscriptionLifecycleEventBodySchema>;
-export type SubscriptionLifecycleEventResult = z.infer<typeof subscriptionLifecycleEventResultSchema>;
+export type CreateSubscriptionBody = z.infer<
+  typeof createSubscriptionBodySchema
+>;
+export type UpdateSubscriptionStatusBody = z.infer<
+  typeof updateSubscriptionStatusBodySchema
+>;
+export type SubscriptionLifecycleEventType = z.infer<
+  typeof subscriptionLifecycleEventTypeSchema
+>;
+export type SubscriptionLifecycleEventBody = z.infer<
+  typeof subscriptionLifecycleEventBodySchema
+>;
+export type SubscriptionLifecycleEventResult = z.infer<
+  typeof subscriptionLifecycleEventResultSchema
+>;

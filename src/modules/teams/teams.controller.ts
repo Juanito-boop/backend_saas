@@ -1,10 +1,16 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import {
-  CurrentUser,
-  type AuthenticatedUser,
-} from '../../lib/auth-session';
+import { CurrentUser, type AuthenticatedUser } from '../../lib/auth-session';
 import {
   createTeamBodySchema,
   inviteUserBodySchema,
@@ -13,11 +19,11 @@ import {
   type UpdateMemberRoleBody,
   updateMemberRoleBodySchema,
 } from './domain/team.schemas';
-import { TeamsService, type ManageableTeamRole } from './teams.service';
+import { TeamsService } from './teams.service';
 
 @Controller('api/teams')
 export class TeamsController {
-  constructor(private readonly teamsService: TeamsService) { }
+  constructor(private readonly teamsService: TeamsService) {}
 
   @Post()
   async createTeam(
@@ -74,12 +80,13 @@ export class TeamsController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId', new ParseUUIDPipe()) teamId: string,
     @Param('memberUserId', new ParseUUIDPipe()) memberUserId: string,
-    @Body(new ZodValidationPipe(updateMemberRoleBodySchema)) body: UpdateMemberRoleBody,
+    @Body(new ZodValidationPipe(updateMemberRoleBodySchema))
+    body: UpdateMemberRoleBody,
   ) {
     return this.teamsService.updateMemberRole(user.id, {
       teamId,
       memberUserId,
-      role: body.role as ManageableTeamRole,
+      role: body.role,
     });
   }
 }

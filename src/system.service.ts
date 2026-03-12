@@ -4,7 +4,11 @@ import { sql } from 'drizzle-orm';
 import { DatabaseService } from './db/database.service';
 import { subscriptions, teams } from './db/schema';
 import { auth } from './lib/auth';
-import { SCRAPE_QUEUE, SCRAPE_QUEUE_NAME, type ScrapeQueue } from './lib/queues';
+import {
+  SCRAPE_QUEUE,
+  SCRAPE_QUEUE_NAME,
+  type ScrapeQueue,
+} from './lib/queues';
 
 type HealthModuleStatus = 'ok' | 'error';
 
@@ -39,7 +43,7 @@ export class SystemService {
   constructor(
     private readonly databaseService: DatabaseService,
     @Inject(SCRAPE_QUEUE) private readonly scrapeQueue: ScrapeQueue,
-  ) { }
+  ) {}
 
   getLiveness(): SystemLivenessReport {
     return {
@@ -97,13 +101,14 @@ export class SystemService {
     });
 
     const report: SystemHealthReport = {
-      status: database.status === 'ok'
-        && auth.status === 'ok'
-        && scrapeQueue.status === 'ok'
-        && teamsModule.status === 'ok'
-        && subscriptionsModule.status === 'ok'
-        ? 'ok'
-        : 'degraded',
+      status:
+        database.status === 'ok' &&
+        auth.status === 'ok' &&
+        scrapeQueue.status === 'ok' &&
+        teamsModule.status === 'ok' &&
+        subscriptionsModule.status === 'ok'
+          ? 'ok'
+          : 'degraded',
       timestamp: new Date().toISOString(),
       modules: {
         api: {
@@ -148,7 +153,9 @@ export class SystemService {
   }
 
   private getAuthHealth(databaseAvailable: boolean): HealthModuleReport {
-    const baseURL = process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? '3000'}`;
+    const baseURL =
+      process.env.BETTER_AUTH_URL ??
+      `http://localhost:${process.env.PORT ?? '3000'}`;
 
     try {
       const parsedBaseURL = new URL(baseURL);

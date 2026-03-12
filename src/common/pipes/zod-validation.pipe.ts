@@ -4,8 +4,11 @@ import type { ZodType } from 'zod';
 import { ValidationError } from '../errors/application-error';
 
 @Injectable()
-export class ZodValidationPipe<TOutput> implements PipeTransform<unknown, TOutput> {
-  constructor(private readonly schema: ZodType<TOutput>) { }
+export class ZodValidationPipe<TOutput> implements PipeTransform<
+  unknown,
+  TOutput
+> {
+  constructor(private readonly schema: ZodType<TOutput>) {}
 
   transform(value: unknown): TOutput {
     const result = this.schema.safeParse(value);
