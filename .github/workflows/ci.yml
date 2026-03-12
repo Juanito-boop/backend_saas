@@ -1,0 +1,66 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '.github/workflows/ci.yml'
+      - 'drizzle/**'
+      - 'drizzle.config.ts'
+      - 'eslint.config.mjs'
+      - 'nest-cli.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'test/**'
+      - 'tsconfig.json'
+      - 'tsconfig.build.json'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '.github/workflows/ci.yml'
+      - 'drizzle/**'
+      - 'drizzle.config.ts'
+      - 'eslint.config.mjs'
+      - 'nest-cli.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'test/**'
+      - 'tsconfig.json'
+      - 'tsconfig.build.json'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Lint and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run linter
+        run: npx eslint "{src,apps,libs,test}/**/*.ts"
+
+      - name: Build project
+        run: npm run build
