@@ -74,5 +74,89 @@ describe('SystemController', () => {
       );
       expect(status).toHaveBeenCalledWith(200);
     });
+
+    it('should return the readiness report and set status 503 when degraded', async () => {
+      const status = jest.fn();
+      const response = {
+        status,
+      } as unknown as Response;
+
+      const report = {
+        status: 'degraded' as const,
+        timestamp: '2026-03-10T00:00:00.000Z',
+        modules: {
+          api: { status: 'ok' as const },
+          database: { status: 'error' as const, error: 'database down' },
+          auth: { status: 'error' as const, error: 'Auth depends on database connectivity' },
+          scrapeQueue: { status: 'ok' as const },
+          teams: { status: 'ok' as const },
+          subscriptions: { status: 'ok' as const },
+        },
+      };
+
+      systemServiceMock.getReadiness.mockResolvedValue(report);
+
+      await expect(systemController.getReadiness(response)).resolves.toEqual(
+        report,
+      );
+      expect(status).toHaveBeenCalledWith(503);
+    });
+  });
+
+  describe('health', () => {
+    it('should proxy readiness and set status 200 when healthy', async () => {
+      const status = jest.fn();
+      const response = {
+        status,
+      } as unknown as Response;
+
+      const report = {
+        status: 'ok' as const,
+        timestamp: '2026-03-10T00:00:00.000Z',
+        modules: {
+          api: { status: 'ok' as const },
+          database: { status: 'ok' as const },
+          auth: { status: 'ok' as const },
+          scrapeQueue: { status: 'ok' as const },
+          teams: { status: 'ok' as const },
+          subscriptions: { status: 'ok' as const },
+        },
+      };
+
+      systemServiceMock.getReadiness.mockResolvedValue(report);
+
+      await expect(systemController.getHealth(response)).resolves.toEqual(
+        report,
+      );
+      expect(systemServiceMock.getReadiness).toHaveBeenCalledTimes(1);
+      expect(status).toHaveBeenCalledWith(200);
+    });
+
+    it('should proxy readiness and set status 503 when degraded', async () => {
+      const status = jest.fn();
+      const response = {
+        status,
+      } as unknown as Response;
+
+      const report = {
+        status: 'degraded' as const,
+        timestamp: '2026-03-10T00:00:00.000Z',
+        modules: {
+          api: { status: 'ok' as const },
+          database: { status: 'error' as const, error: 'database down' },
+          auth: { status: 'error' as const, error: 'Auth depends on database connectivity' },
+          scrapeQueue: { status: 'ok' as const },
+          teams: { status: 'ok' as const },
+          subscriptions: { status: 'ok' as const },
+        },
+      };
+
+      systemServiceMock.getReadiness.mockResolvedValue(report);
+
+      await expect(systemController.getHealth(response)).resolves.toEqual(
+        report,
+      );
+      expect(status).toHaveBeenCalledWith(503);
+    });
   });
 });
