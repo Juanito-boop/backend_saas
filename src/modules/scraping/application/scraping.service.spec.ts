@@ -145,12 +145,12 @@ describe('ScrapingService', () => {
 
     const [createScrapeJobInput] = scrapingRepository.createScrapeJob.mock
       .calls[0] as [
-        {
-          productId: string;
-          domainId: string;
-          scheduledAt: Date;
-        },
-      ];
+      {
+        productId: string;
+        domainId: string;
+        scheduledAt: Date;
+      },
+    ];
 
     expect(createScrapeJobInput).toMatchObject({
       productId,
