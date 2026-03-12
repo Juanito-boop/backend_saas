@@ -87,7 +87,10 @@ describe('SystemController', () => {
         modules: {
           api: { status: 'ok' as const },
           database: { status: 'error' as const, error: 'database down' },
-          auth: { status: 'error' as const, error: 'Auth depends on database connectivity' },
+          auth: {
+            status: 'error' as const,
+            error: 'Auth depends on database connectivity',
+          },
           scrapeQueue: { status: 'ok' as const },
           teams: { status: 'ok' as const },
           subscriptions: { status: 'ok' as const },
@@ -144,7 +147,10 @@ describe('SystemController', () => {
         modules: {
           api: { status: 'ok' as const },
           database: { status: 'error' as const, error: 'database down' },
-          auth: { status: 'error' as const, error: 'Auth depends on database connectivity' },
+          auth: {
+            status: 'error' as const,
+            error: 'Auth depends on database connectivity',
+          },
           scrapeQueue: { status: 'ok' as const },
           teams: { status: 'ok' as const },
           subscriptions: { status: 'ok' as const },

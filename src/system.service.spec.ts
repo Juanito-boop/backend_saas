@@ -41,7 +41,7 @@ describe('SystemService', () => {
   ) => {
     select.mockImplementationOnce(() => ({
       from: () => ({
-        limit: async () => result,
+        limit: () => Promise.resolve(result),
       }),
     }));
   };

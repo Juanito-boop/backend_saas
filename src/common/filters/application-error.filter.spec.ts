@@ -1,9 +1,6 @@
 import type { ArgumentsHost } from '@nestjs/common';
 
-import {
-  ConflictError,
-  NotFoundError,
-} from '../errors/application-error';
+import { ConflictError, NotFoundError } from '../errors/application-error';
 import { ApplicationErrorFilter } from './application-error.filter';
 
 describe('ApplicationErrorFilter', () => {

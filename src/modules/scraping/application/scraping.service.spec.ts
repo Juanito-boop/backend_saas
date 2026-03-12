@@ -1,4 +1,11 @@
-import { NotFoundError, ValidationError } from '../../../common/errors/application-error';
+import {
+  NotFoundError,
+  ValidationError,
+} from '../../../common/errors/application-error';
+import type {
+  ScheduleScrapeResult,
+  ScrapeJobRecord,
+} from '../domain/scraping.schemas';
 import type { TeamMembership } from '../../teams/domain/team.schemas';
 import { ScrapingService } from './scraping.service';
 
@@ -48,8 +55,12 @@ describe('ScrapingService', () => {
   });
 
   it('fails fast when scheduling a scrape for a missing product', async () => {
-    const { service, scrapingRepository, teamMembershipReader, scrapeJobDispatcher } =
-      createService();
+    const {
+      service,
+      scrapingRepository,
+      teamMembershipReader,
+      scrapeJobDispatcher,
+    } = createService();
 
     scrapingRepository.findProductContext.mockResolvedValueOnce(null);
 
@@ -61,8 +72,12 @@ describe('ScrapingService', () => {
   });
 
   it('rejects scheduling when the requested domain does not match the product domain', async () => {
-    const { service, scrapingRepository, teamMembershipReader, scrapeJobDispatcher } =
-      createService();
+    const {
+      service,
+      scrapingRepository,
+      teamMembershipReader,
+      scrapeJobDispatcher,
+    } = createService();
 
     scrapingRepository.findProductContext.mockResolvedValueOnce({
       productId,
@@ -86,8 +101,12 @@ describe('ScrapingService', () => {
   });
 
   it('creates and dispatches a scrape job when the actor can access the product', async () => {
-    const { service, scrapingRepository, scrapeJobDispatcher, teamMembershipReader } =
-      createService();
+    const {
+      service,
+      scrapingRepository,
+      scrapeJobDispatcher,
+      teamMembershipReader,
+    } = createService();
 
     scrapingRepository.findProductContext.mockResolvedValueOnce({
       productId,
@@ -96,18 +115,19 @@ describe('ScrapingService', () => {
     });
     teamMembershipReader.getMembershipOrThrow.mockResolvedValueOnce(membership);
     scrapingRepository.createScrapeJob.mockImplementationOnce(
-      async (input: { productId: string; domainId: string; scheduledAt: Date }) => ({
-        id: scrapeJobId,
-        productId: input.productId,
-        status: 'pending',
-        scheduledAt: input.scheduledAt,
-        startedAt: null,
-        finishedAt: null,
-        workerId: null,
-        domainId: input.domainId,
-        retryCount: 0,
-        createdAt: new Date('2026-03-11T10:00:00.000Z'),
-      }),
+      (input: { productId: string; domainId: string; scheduledAt: Date }) =>
+        Promise.resolve({
+          id: scrapeJobId,
+          productId: input.productId,
+          status: 'pending',
+          scheduledAt: input.scheduledAt,
+          startedAt: null,
+          finishedAt: null,
+          workerId: null,
+          domainId: input.domainId,
+          retryCount: 0,
+          createdAt: new Date('2026-03-11T10:00:00.000Z'),
+        }),
     );
     scrapeJobDispatcher.dispatch.mockResolvedValueOnce({
       queueJobId: 'queue-job-1',
@@ -115,18 +135,28 @@ describe('ScrapingService', () => {
       queueJobName: 'scrape-product',
     });
 
-    const result = await service.scheduleScrape(actorUserId, {
+    const result: ScheduleScrapeResult = await service.scheduleScrape(
+      actorUserId,
+      {
+        productId,
+        domainId,
+      },
+    );
+
+    const [createScrapeJobInput] = scrapingRepository.createScrapeJob.mock
+      .calls[0] as [
+        {
+          productId: string;
+          domainId: string;
+          scheduledAt: Date;
+        },
+      ];
+
+    expect(createScrapeJobInput).toMatchObject({
       productId,
       domainId,
     });
-
-    expect(scrapingRepository.createScrapeJob).toHaveBeenCalledWith(
-      expect.objectContaining({
-        productId,
-        domainId,
-        scheduledAt: expect.any(Date),
-      }),
-    );
+    expect(createScrapeJobInput.scheduledAt).toBeInstanceOf(Date);
     expect(scrapeJobDispatcher.dispatch).toHaveBeenCalledWith({
       scrapeJobId,
       productId,
@@ -146,7 +176,8 @@ describe('ScrapingService', () => {
   });
 
   it('lists product jobs only after verifying team membership', async () => {
-    const { service, scrapingRepository, teamMembershipReader } = createService();
+    const { service, scrapingRepository, teamMembershipReader } =
+      createService();
     const createdAt = new Date('2026-03-11T10:00:00.000Z');
 
     scrapingRepository.findProductContext.mockResolvedValueOnce({
@@ -170,13 +201,18 @@ describe('ScrapingService', () => {
       },
     ]);
 
-    const jobs = await service.listProductJobs(actorUserId, productId);
+    const jobs: ScrapeJobRecord[] = await service.listProductJobs(
+      actorUserId,
+      productId,
+    );
 
     expect(teamMembershipReader.getMembershipOrThrow).toHaveBeenCalledWith(
       teamId,
       actorUserId,
     );
-    expect(scrapingRepository.listJobsForProduct).toHaveBeenCalledWith(productId);
+    expect(scrapingRepository.listJobsForProduct).toHaveBeenCalledWith(
+      productId,
+    );
     expect(jobs).toHaveLength(1);
     expect(jobs[0]).toMatchObject({
       id: scrapeJobId,
