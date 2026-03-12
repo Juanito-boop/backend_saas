@@ -3,6 +3,12 @@ import type { Response } from 'express';
 import { SystemController } from 'src/system.controller';
 import { SystemService } from 'src/system.service';
 
+jest.mock('src/lib/auth', () => ({
+  auth: {
+    handler: jest.fn(),
+  },
+}));
+
 describe('SystemController', () => {
   let systemController: SystemController;
   const systemServiceMock = {
